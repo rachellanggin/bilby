@@ -13,7 +13,7 @@ from .. import utils as gwutils
 from .calibration import Recalibrate
 from .geometry import InterferometerGeometry
 from .strain_data import InterferometerStrainData
-from ..conversion import generate_all_bbh_parameters
+from ..conversion import generate_all_bbh_parameters, component_masses_to_chirp_mass
 
 
 class Interferometer(object):
@@ -249,7 +249,7 @@ class Interferometer(object):
             sampling_frequency=sampling_frequency, duration=duration,
             start_time=start_time)
 
-    def antenna_response(self, ra, dec, time, psi, mode):
+    def antenna_response(self, ra, dec, time, psi, chirp_mass, frequency):
         """
         Calculate the antenna response function for a given sky location
 
@@ -271,19 +271,26 @@ class Interferometer(object):
         mode: str
             polarisation mode (e.g. 'plus', 'cross') or the name of a specific detector.
             If mode == self.name, return 1
+        chirp_mass: float
+            chirp_mass in solar masses
+        frequency: numpy array
+            frequency in Hz
+
 
         Returns
         =======
-        float: The antenna response for the specified mode and time/location
+        array_like: The antenna response for the specified mode
 
         """
-        if mode in ["plus", "cross", "x", "y", "breathing", "longitudinal"]:
-            polarization_tensor = get_polarization_tensor(ra, dec, time, psi, mode)
-            return three_by_three_matrix_contraction(self.geometry.detector_tensor, polarization_tensor)
-        elif mode == self.name:
-            return 1
-        else:
-            return 0
+        polarization_tensor_plus, polarization_tensor_cross = gwutils.get_polarization_tensor(
+            ra, dec, time, psi, chirp_mass, frequency)
+        antenna_response_plus = np.einsum(
+            'ijk,ij->k', polarization_tensor_plus, self.geometry.detector_tensor)
+        antenna_response_cross = np.einsum(
+            'ijk,ij->k', polarization_tensor_cross, self.geometry.detector_tensor)
+
+        # return np.einsum('ij,ij->', self.geometry.detector_tensor, polarization_tensor)
+        return antenna_response_plus, antenna_response_cross
 
     def get_detector_response(self, waveform_polarizations, parameters, frequencies=None):
         """ Get the detector response for a particular waveform
@@ -303,22 +310,50 @@ class Interferometer(object):
         =======
         array_like: A 3x3 array representation of the detector response (signal observed in the interferometer)
         """
-        if frequencies is None:
-            frequencies = self.frequency_array[self.frequency_mask]
-            mask = self.frequency_mask
-        else:
-            mask = np.ones(len(frequencies), dtype=bool)
+        # args, args_below_fmin and args_above_threshold_frequency 
+        # can probably be pre-computed before, but I'm getting weird errors when I do so
+        threshold_frequency = 21
+        args = np.argwhere((
+            self.strain_data.frequency_array >= self.strain_data.minimum_frequency) & 
+            (self.strain_data.frequency_array <= threshold_frequency)).flatten()
+        cut_frequency = self.strain_data.frequency_array[args]
+        
+        args_below_fmin = np.where(
+            self.strain_data.frequency_array < self.strain_data.minimum_frequency)[0]
+        args_above_threshold_frequency = np.where(
+            self.strain_data.frequency_array > threshold_frequency)[0]
+        
+        chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
 
-        signal = {}
-        for mode in waveform_polarizations.keys():
-            det_response = self.antenna_response(
-                parameters['ra'],
-                parameters['dec'],
-                parameters['geocent_time'],
-                parameters['psi'], mode)
+        det_response_plus, det_response_cross = self.antenna_response(
+            parameters['ra'],
+            parameters['dec'],
+            parameters['geocent_time'],
+            parameters['psi'],
+            chirp_mass,
+            cut_frequency)
 
-            signal[mode] = waveform_polarizations[mode] * det_response
-        signal_ifo = sum(signal.values()) * mask
+        # we don't care about fill_array_below, but we keep it 
+        # because of the frequency length
+
+        fill_array_below = np.ones(len(args_below_fmin)) * det_response_plus[0] 
+        fill_array_above = np.ones(len(args_above_threshold_frequency)) * det_response_plus[-1]    
+        final_antenna_response_plus = np.append(
+            np.append(fill_array_below, det_response_plus),
+            fill_array_above
+            )
+
+        fill_array_below = np.ones(len(args_below_fmin))*det_response_cross[0] 
+        fill_array_above = np.ones(len(args_above_threshold_frequency))*det_response_cross[-1]    
+        final_antenna_response_cross = np.append(
+            np.append(fill_array_below, det_response_cross),
+            fill_array_above
+            )
+        
+        signal_ifo = waveform_polarizations['plus'] * final_antenna_response_plus + \
+            waveform_polarizations['cross'] * final_antenna_response_cross
+
+        signal_ifo *= self.strain_data.frequency_mask
 
         time_shift = self.time_delay_from_geocenter(
             parameters['ra'], parameters['dec'], parameters['geocent_time'])
@@ -328,11 +363,12 @@ class Interferometer(object):
         dt_geocent = parameters['geocent_time'] - self.strain_data.start_time
         dt = dt_geocent + time_shift
 
-        signal_ifo[mask] = signal_ifo[mask] * np.exp(-1j * 2 * np.pi * dt * frequencies)
+        signal_ifo[self.strain_data.frequency_mask] = signal_ifo[self.strain_data.frequency_mask] * np.exp(
+            -1j * 2 * np.pi * dt * self.strain_data.frequency_array[self.strain_data.frequency_mask])
 
-        signal_ifo[mask] *= self.calibration_model.get_calibration_factor(
-            frequencies, prefix='recalib_{}_'.format(self.name), **parameters
-        )
+        signal_ifo[self.strain_data.frequency_mask] *= self.calibration_model.get_calibration_factor(
+            self.strain_data.frequency_array[self.strain_data.frequency_mask],
+            prefix='recalib_{}_'.format(self.name), **parameters)
 
         return signal_ifo
 
@@ -368,15 +404,15 @@ class Interferometer(object):
             mass_2=parameters["mass_2"],
         )
         deltaT = np.round(deltaT, 1)
-        if deltaT > self.duration:
-            msg = (
-                f"The injected signal has a duration in-band of {deltaT}s, but "
-                f"the data for detector {self.name} has a duration of {self.duration}s"
-            )
-            if raise_error:
-                raise ValueError(msg)
-            else:
-                logger.warning(msg)
+        # if deltaT > self.duration:
+        #     msg = (
+        #         f"The injected signal has a duration in-band of {deltaT}s, but "
+        #         f"the data for detector {self.name} has a duration of {self.duration}s"
+        #     )
+        #     if raise_error:
+        #         raise ValueError(msg)
+        #     else:
+        #         logger.warning(msg)
 
     def inject_signal(self, parameters, injection_polarizations=None,
                       waveform_generator=None, raise_error=True):

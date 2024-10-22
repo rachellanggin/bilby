@@ -10,10 +10,109 @@ from bilby_cython.geometry import (
 )
 from bilby_cython.time import greenwich_mean_sidereal_time
 
-from ..core.utils import (logger, run_commandline,
+from ..core.utils import (ra_dec_to_theta_phi, logger, run_commandline,
                           check_directory_exists_and_if_not_mkdir,
-                          SamplesSummary, theta_phi_to_ra_dec)
-from ..core.utils.constants import solar_mass
+                          SamplesSummary, theta_phi_to_ra_dec, speed_of_light)
+from ..core.utils.constants import solar_mass, gravitational_constant
+
+try:
+    import lal
+    import lalsimulation as lalsim
+except ImportError:
+    logger.debug("You do not have lalsuite installed currently. You will"
+                 " not be able to use some of the prebuilt functions.")
+
+
+def earth_motion_time_delay(geocent_time, chirp_mass, frequency):
+    '''
+    Eq. just below (9) in https://arxiv.org/pdf/1710.05325.pdf,
+    note that the equation in the paper above assumes G=c=1
+
+
+    Parameters
+    ----------
+    geocent_time: numpy array 
+        geocento_time in seconds
+    chirp_mass: float
+        chirp_mass  in solar masses
+    frequency: numpy array 
+        frequency in in Hz
+    
+    Returns
+    -------
+    t_f: numpy array
+
+    '''
+    t_f = geocent_time - \
+        (5 / 256) * (chirp_mass * solar_mass)**(-5 / 3) * \
+        (np.pi * frequency)**(-8 / 3) * speed_of_light**5 * gravitational_constant**(-5 / 3)
+    return t_f
+
+
+def multiply_matrices(m, n, length):
+    result = np.zeros([3, 3, length])
+    for ii in range(3):
+        for jj in range(3):
+            result[ii, jj] = m[ii] * n[jj]
+    return result
+
+
+def get_polarization_tensor(ra, dec, geocent_time, psi, chirp_mass, cut_frequency):
+    '''
+     Calculate the polarization tensor for a given sky location and time
+
+    See Nishizawa et al. (2009) arXiv:0903.0528 for definitions of the polarisation tensors.
+    [u, v, w] represent the Earth-frame
+    [m, n, omega] represent the wave-frame
+    Note: there is a typo in the definition of the wave-frame in Nishizawa et al.    
+    This function is similar the usual get_polarization_tensor function implemented,
+    in bilby, but it includes the frequency dependent antenna response
+
+
+    Parameters
+    -------
+    ra: float
+        right ascension in radians
+    dec: float
+        declination in radians
+    time: float
+        geocentric GPS time
+    psi: float
+        binary polarisation angle counter-clockwise about the direction of propagation
+    chirp_mass: float
+        chirp_mass in solar masses
+    cut_frequency: numpy array
+        frequency between minimum_frequency and the threshold frequency,
+        where the threshold frequency is the frequency where the antenna response
+        does not change, usually above 20 Hz
+
+
+    Returns
+    -------
+    array_like: A 3x3 representation of the polarization_tensor for the specified mode.
+
+    '''
+    
+    new_geocent_time = earth_motion_time_delay(
+        geocent_time, chirp_mass, cut_frequency)
+
+    gmst = np.fmod(np.array([
+        lal.GreenwichMeanSiderealTime(tt) for tt in new_geocent_time]),
+        2 * np.pi)
+
+    theta, phi = ra_dec_to_theta_phi(ra, dec, gmst)
+    theta = np.ones(len(phi)) * theta
+    u = np.array([np.cos(phi) * np.cos(theta), np.cos(theta) * np.sin(phi), -np.sin(theta)])
+    v = np.array([-np.sin(phi), np.cos(phi), np.zeros(len(phi))])
+    m = -u * np.sin(psi) - v * np.cos(psi)
+    n = -u * np.cos(psi) + v * np.sin(psi)
+         
+    plus = multiply_matrices(m, m, len(cut_frequency)) - \
+        multiply_matrices(n, n, len(cut_frequency))
+    cross = multiply_matrices(m, n, len(cut_frequency)) + \
+        multiply_matrices(n, m, len(cut_frequency))
+
+    return plus, cross
 
 
 def asd_from_freq_series(freq_data, df):

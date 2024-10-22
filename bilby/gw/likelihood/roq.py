@@ -1,4 +1,4 @@
-
+from ast import Try
 import json
 
 import numpy as np
@@ -109,6 +109,8 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
             time_reference=time_reference
         )
 
+        self.linear_as_quadratic = False
+
         self.roq_params_check = roq_params_check
         self.roq_scale_factor = roq_scale_factor
         if isinstance(roq_params, np.ndarray) or roq_params is None:
@@ -166,7 +168,11 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
                 quadratic_matrix.close()
 
         self.number_of_bases_linear = len(self.weights[f'{self.interferometers[0].name}_linear'])
-        self.number_of_bases_quadratic = len(self.weights[f'{self.interferometers[0].name}_quadratic'])
+        if self.linear_as_quadratic:
+            self.number_of_bases_quadratic = self.number_of_bases_linear
+        else:
+            self.number_of_bases_quadratic = len(self.weights[f'{self.interferometers[0].name}_quadratic'])
+
         self._cache = dict(parameters=None, basis_number_linear=None, basis_number_quadratic=None)
         self.parameter_conversion = parameter_conversion
 
@@ -175,7 +181,9 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
             if number_of_bases > 1:
                 self._verify_numbers_of_prior_ranges_and_frequency_nodes(basis_type)
             else:
-                self._check_frequency_nodes_exist_for_single_basis(basis_type)
+                if basis_type == 'quadratic' and not self.linear_as_quadratic:
+                    self._check_frequency_nodes_exist(basis_type)
+
             self._verify_prior_ranges(basis_type)
 
         self._set_unique_frequency_nodes_and_inverse()
@@ -458,28 +466,55 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
         linear_indices = self.waveform_generator.waveform_arguments['linear_indices']
         quadratic_indices = self.waveform_generator.waveform_arguments['quadratic_indices']
         size_linear = len(linear_indices)
-        size_quadratic = len(quadratic_indices)
         h_linear = np.zeros(size_linear, dtype=complex)
-        h_quadratic = np.zeros(size_quadratic, dtype=complex)
-        for mode in waveform_polarizations['linear']:
-            response = interferometer.antenna_response(
+
+        if not self.linear_as_quadratic:
+            size_quadratic = len(self.waveform_generator.waveform_arguments['frequency_nodes_quadratic'])
+            h_quadratic = np.zeros(size_quadratic, dtype=complex)
+
+        # for mode in waveform_polarizations['linear']:
+        #    response = interferometer.antenna_response(
+        #        self.parameters['ra'], self.parameters['dec'],
+        #        self.parameters['geocent_time'], self.parameters['psi'],
+        #        mode
+        #    )
+        #    h_linear += waveform_polarizations['linear'][mode] * response
+        #    h_quadratic += waveform_polarizations['quadratic'][mode] * response
+
+        linear_response_plus, linear_response_cross = interferometer.antenna_response(
+            self.parameters['ra'], self.parameters['dec'],
+            self.parameters['geocent_time'], self.parameters['psi'],
+            self.parameters['chirp_mass'], 
+            self.waveform_generator.waveform_arguments['frequency_nodes_linear'])
+        h_linear = (waveform_polarizations['linear']['plus'] * linear_response_plus) + (waveform_polarizations['linear']['cross'] * linear_response_cross)
+        
+        if not self.linear_as_quadratic:
+            quadratic_response_plus, quadratic_response_cross = interferometer.antenna_response(
                 self.parameters['ra'], self.parameters['dec'],
-                time_ref,
-                self.parameters['psi'],
-                mode
+                self.parameters['geocent_time'], self.parameters['psi'],
+                self.parameters['chirp_mass'],
+                self.waveform_generator.waveform_arguments['frequency_nodes_quadratic'])
+            h_quadratic = (waveform_polarizations['quadratic']['plus']*quadratic_response_plus) + (waveform_polarizations['quadratic']['cross'] * quadratic_response_cross)
+
+        calib_linear = interferometer.calibration_model.get_calibration_factor(
+            size_linear, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
+        if not self.linear_as_quadratic:
+            calib_quadratic = interferometer.calibration_model.get_calibration_factor(
+                size_quadratic, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
+
+        h_linear *= calib_linear
+        if not self.linear_as_quadratic:
+            h_quadratic *= calib_quadratic
+
+            optimal_snr_squared = np.vdot(
+                np.abs(h_quadratic)**2,
+                self.weights[interferometer.name + '_quadratic'][self.basis_number_quadratic]
             )
-            h_linear += waveform_polarizations['linear'][mode] * response
-            h_quadratic += waveform_polarizations['quadratic'][mode] * response
-
-        calib_factor = interferometer.calibration_model.get_calibration_factor(
-            frequency_nodes, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
-        h_linear *= calib_factor[linear_indices]
-        h_quadratic *= calib_factor[quadratic_indices]
-
-        optimal_snr_squared = np.vdot(
-            np.abs(h_quadratic)**2,
-            self.weights[interferometer.name + '_quadratic'][self.basis_number_quadratic]
-        )
+        else:
+            h_linear_matrix = np.outer(h_linear, np.conjugate(h_linear))
+            h_quad_matrix = np.multiply(h_linear_matrix,
+                                        self.weights[interferometer.name + '_quadratic'][self.basis_number_quadratic]).real
+            optimal_snr_squared = h_quad_matrix.sum()
 
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'], time_ref)
@@ -765,6 +800,8 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
             multiband_quadratic = quadratic_matrix['multiband_quadratic'][()]
         else:
             multiband_quadratic = False
+        if 'linear_as_quadratic' in basis['basis_quadratic']['0']['basis']:
+            self.linear_as_quadratic = True
 
         # Get intersection between ifo and ROQ frequency samples. Required only for non-multibanded basis.
         if not (multiband_linear and multiband_quadratic):
@@ -810,6 +847,8 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
 
         if multiband_quadratic:
             self._set_weights_quadratic_multiband(quadratic_matrix, idxs_in_prior_range['quadratic'])
+        elif linear_as_quadratic:
+            self._set_weights_linear_as_quadratic(linear_matrix, idxs_in_prior_range['linear'], roq_idxs, ifo_idxs)
         else:
             self._set_weights_quadratic(quadratic_matrix, idxs_in_prior_range['quadratic'], roq_idxs, ifo_idxs)
 
@@ -946,6 +985,35 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
                         quadratic_matrix_single[:, roq_idxs[ifo.name]],
                         1 / ifo.power_spectral_density_array[ifo.frequency_mask][ifo_idxs[ifo.name]]))
             del quadratic_matrix_single
+
+    def _set_weights_linear_as_quadratic(self, linear_matrix, basis_idxs, roq_idxs, ifo_idxs):
+        """
+        Parameters
+        ==========
+        linear_matrix : dictionary or h5py.File
+            linear basis
+        basis_idxs : array-like
+            indexes of bases used for a run
+        roq_idxs : dictionary
+            dictionary whose keys are interferometer names and values are indexes of basis components intersecting
+            frequency-domain data
+        ifo_idxs : dictionary
+            dictionary whose keys are interferometer names and values are indexes of frequency-domain data intersecting
+            basis components
+
+        """
+        for ifo in self.interferometers:
+            self.weights[ifo.name + '_quadratic'] = []
+        for basis_idx in basis_idxs:
+            logger.info(f"Building linar-as-quadratic ROQ weights for the {basis_idx}-th basis.")
+            linear_matrix_single = linear_matrix['basis_linear'][str(basis_idx)]['basis']
+            for ifo in self.interferometers:
+                linear_matrix_single_ifo = linear_matrix_single[roq_idxs[ifo.name]]
+                self.weights[ifo.name + '_quadratic'].append(np.dot(linear_matrix_single_ifo /
+                    ifo.power_spectral_density_array[ifo.frequency_mask][ifo_idxs[ifo.name]],
+                    linear_matrix_single_ifo.conjugate().T) * 4. / ifo.duration)
+                del linear_matrix_single_ifo
+            del linear_matrix_single
 
     def _set_weights_quadratic_multiband(self, quadratic_matrix, basis_idxs):
         """
