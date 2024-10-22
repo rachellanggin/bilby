@@ -1,4 +1,4 @@
-import os
+import os 
 
 import numpy as np
 from bilby_cython.geometry import (
