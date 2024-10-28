@@ -462,12 +462,8 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
         else:
             time_ref = self.parameters['geocent_time']
 
-        frequency_nodes = self.waveform_generator.waveform_arguments['frequency_nodes']
-        linear_indices = self.waveform_generator.waveform_arguments['linear_indices']
-        quadratic_indices = self.waveform_generator.waveform_arguments['quadratic_indices']
-        size_linear = len(linear_indices)
+        size_linear = len(self.waveform_generator.waveform_arguments['frequency_nodes_linear'])
         h_linear = np.zeros(size_linear, dtype=complex)
-
         if not self.linear_as_quadratic:
             size_quadratic = len(self.waveform_generator.waveform_arguments['frequency_nodes_quadratic'])
             h_quadratic = np.zeros(size_quadratic, dtype=complex)
@@ -487,7 +483,7 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
             self.parameters['chirp_mass'], 
             self.waveform_generator.waveform_arguments['frequency_nodes_linear'])
         h_linear = (waveform_polarizations['linear']['plus'] * linear_response_plus) + (waveform_polarizations['linear']['cross'] * linear_response_cross)
-        
+
         if not self.linear_as_quadratic:
             quadratic_response_plus, quadratic_response_cross = interferometer.antenna_response(
                 self.parameters['ra'], self.parameters['dec'],
@@ -800,7 +796,7 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
             multiband_quadratic = quadratic_matrix['multiband_quadratic'][()]
         else:
             multiband_quadratic = False
-        if 'linear_as_quadratic' in basis['basis_quadratic']['0']['basis']:
+        if 'linear_as_quadratic' in quadratic_matrix['basis_quadratic']['0']['basis']
             self.linear_as_quadratic = True
 
         # Get intersection between ifo and ROQ frequency samples. Required only for non-multibanded basis.
