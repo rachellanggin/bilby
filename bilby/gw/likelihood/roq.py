@@ -1,3 +1,4 @@
+
 from ast import Try
 import json
 
@@ -9,7 +10,6 @@ from ...core.utils import (
     logger, create_frequency_series, speed_of_light, radius_of_earth
 )
 from ..prior import CBCPriorDict
-from ..utils import ln_i0
 
 
 class ROQGravitationalWaveTransient(GravitationalWaveTransient):
@@ -141,8 +141,8 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
                 elif is_hdf5_quadratic:
                     self.roq_params = np.array(
                         [(quadratic_matrix['minimum_frequency_hz'][()],
-                            quadratic_matrix['maximum_frequency_hz'][()],
-                            quadratic_matrix['duration_s'][()])],
+                          quadratic_matrix['maximum_frequency_hz'][()],
+                          quadratic_matrix['duration_s'][()])],
                         dtype=[('flow', float), ('fhigh', float), ('seglen', float)]
                     )
             self.weights = dict()
@@ -168,7 +168,7 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
                 if basis_type == 'quadratic' and not self.linear_as_quadratic:
                     self._check_frequency_nodes_exist(basis_type)
 
-    def _verify_numbers_of_prior_ranges_and_frequency_nodes(self, basis_type):
+    def _verify_prior_ranges_and_frequency_nodes(self, basis_type):
         """
         Check if self.weights contains lists of prior ranges and frequency nodes, and their sizes are equal to the
         number of bases.
@@ -336,7 +336,7 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
 
     @property
     def basis_number_linear(self):
-        if self.number_of_bases_linear > 1 or self.number_of_bases_quadratic > 1:
+        if self.number_of_bases_linear > 1:
             if self.parameters != self._cache['parameters']:
                 self._update_basis()
             return self._cache['basis_number_linear']
@@ -345,7 +345,7 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
 
     @property
     def basis_number_quadratic(self):
-        if self.number_of_bases_linear > 1 or self.number_of_bases_quadratic > 1:
+        if self.number_of_bases_quadratic > 1:
             if self.parameters != self._cache['parameters']:
                 self._update_basis()
             return self._cache['basis_number_quadratic']
@@ -380,16 +380,16 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
 
         size_linear = len(self.waveform_generator.waveform_arguments['frequency_nodes_linear'])
         h_linear = np.zeros(size_linear, dtype=complex)
-        # if not self.linear_as_quadratic:
-
+        #if not self.linear_as_quadratic:
+        
         size_quadratic = len(self.waveform_generator.waveform_arguments['frequency_nodes_quadratic'])
         if size_quadratic == size_linear:
             h_quadratic = np.zeros(size_quadratic, dtype=complex)
         else:
-            # print('inside thie thign')
+            #print('inside thie thign')
             self.linear_as_quadratic = True
-        # print(size_quadratic, size_linear) 
-        # for mode in waveform_polarizations['linear']:
+        #print(size_quadratic, size_linear) 
+        #for mode in waveform_polarizations['linear']:
         #    response = interferometer.antenna_response(
         #        self.parameters['ra'], self.parameters['dec'],
         #        self.parameters['geocent_time'], self.parameters['psi'],
@@ -403,14 +403,14 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
             self.parameters['geocent_time'], self.parameters['psi'],
             self.parameters['chirp_mass'], 
             self.waveform_generator.waveform_arguments['frequency_nodes_linear'])
-        h_linear = (waveform_polarizations['linear']['plus'] * linear_response_plus) + (waveform_polarizations['linear']['cross'] * linear_response_cross)
+        h_linear = (waveform_polarizations['linear']['plus']*linear_response_plus) + (waveform_polarizations['linear']['cross']*linear_response_cross)
         if not self.linear_as_quadratic:
             quadratic_response_plus, quadratic_response_cross = interferometer.antenna_response(
                 self.parameters['ra'], self.parameters['dec'],
                 self.parameters['geocent_time'], self.parameters['psi'],
                 self.parameters['chirp_mass'],
                 self.waveform_generator.waveform_arguments['frequency_nodes_quadratic'])
-            h_quadratic = (waveform_polarizations['quadratic']['plus'] * quadratic_response_plus) + (waveform_polarizations['quadratic']['cross'] * quadratic_response_cross)
+            h_quadratic = (waveform_polarizations['quadratic']['plus']*quadratic_response_plus) + (waveform_polarizations['quadratic']['cross']*quadratic_response_cross)
 
         calib_linear = interferometer.calibration_model.get_calibration_factor(
             size_linear, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
@@ -420,7 +420,7 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
 
         h_linear *= calib_linear
 
-        # print('self.linear_as_quadratic', self.linear_as_quadratic)
+        #print('self.linear_as_quadratic', self.linear_as_quadratic)
 
         if not self.linear_as_quadratic:
             h_quadratic *= calib_quadratic
@@ -940,7 +940,7 @@ class ROQGravitationalWaveTransient(GravitationalWaveTransient):
                 print('ifo_idxs[ifo.name]', ifo_idxs[ifo.name])
                 print(ifo.name)
                 print('ifo.power_spectral_density_array[ifo.frequency_mask]', ifo.power_spectral_density_array[ifo.frequency_mask].shape)
-                self.weights[ifo.name + '_quadratic'].append(np.dot(linear_matrix_single_ifo /
+                self.weights[ifo.name + '_quadratic'].append(np.dot(linear_matrix_single_ifo/
                     ifo.power_spectral_density_array[ifo.frequency_mask], 
                     linear_matrix_single_ifo.conjugate().T) * 4. / ifo.duration)
                 del linear_matrix_single_ifo
