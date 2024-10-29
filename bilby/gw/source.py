@@ -6,250 +6,9 @@ from .conversion import bilby_to_lalsimulation_spins
 from .utils import (lalsim_GetApproximantFromString,
                     lalsim_SimInspiralFD,
                     lalsim_SimInspiralChooseFDWaveform,
+                    lalsim_SimInspiralWaveformParamsInsertTidalLambda1,
+                    lalsim_SimInspiralWaveformParamsInsertTidalLambda2,
                     lalsim_SimInspiralChooseFDWaveformSequence)
-
-UNUSED_KWARGS_MESSAGE = """There are unused waveform kwargs. This is deprecated behavior and will
-result in an error in future releases. Make sure all of the waveform kwargs are correctly
-spelled.
-
-Unused waveform_kwargs: {waveform_kwargs}
-"""
-
-
-def gwsignal_binary_black_hole(frequency_array, mass_1, mass_2, luminosity_distance, a_1, tilt_1,
-                               phi_12, a_2, tilt_2, phi_jl, theta_jn, phase, **kwargs):
-    """
-    A binary black hole waveform model using GWsignal
-
-    Parameters
-    ==========
-    frequency_array: array_like
-        The frequencies at which we want to calculate the strain
-    mass_1: float
-        The mass of the heavier object in solar masses
-    mass_2: float
-        The mass of the lighter object in solar masses
-    luminosity_distance: float
-        The luminosity distance in megaparsec
-    a_1: float
-        Dimensionless primary spin magnitude
-    tilt_1: float
-        Primary tilt angle
-    phi_12: float
-        Azimuthal angle between the two component spins
-    a_2: float
-        Dimensionless secondary spin magnitude
-    tilt_2: float
-        Secondary tilt angle
-    phi_jl: float
-        Azimuthal angle between the total binary angular momentum and the
-        orbital angular momentum
-    theta_jn: float
-        Angle between the total binary angular momentum and the line of sight
-    phase: float
-        The phase at coalescence
-    kwargs: dict
-        Optional keyword arguments
-        Supported arguments:
-
-        - waveform_approximant
-        - reference_frequency
-        - minimum_frequency
-        - maximum_frequency
-        - catch_waveform_errors
-        - pn_amplitude_order
-        - mode_array:
-          Activate a specific mode array and evaluate the model using those
-          modes only.  e.g. waveform_arguments =
-          dict(waveform_approximant='IMRPhenomHM', mode_array=[[2,2],[2,-2]])
-          returns the 22 and 2-2 modes only of IMRPhenomHM.  You can only
-          specify modes that are included in that particular model.  e.g.
-          waveform_arguments = dict(waveform_approximant='IMRPhenomHM',
-          mode_array=[[2,2],[2,-2],[5,5],[5,-5]]) is not allowed because the
-          55 modes are not included in this model.  Be aware that some models
-          only take positive modes and return the positive and the negative
-          mode together, while others need to call both.  e.g.
-          waveform_arguments = dict(waveform_approximant='IMRPhenomHM',
-          mode_array=[[2,2],[4,-4]]) returns the 22 and 2-2 of IMRPhenomHM.
-          However, waveform_arguments =
-          dict(waveform_approximant='IMRPhenomXHM', mode_array=[[2,2],[4,-4]])
-          returns the 22 and 4-4 of IMRPhenomXHM.
-
-    Returns
-    =======
-    dict: A dictionary with the plus and cross polarisation strain modes
-
-    Notes
-    =====
-    This function is a temporary wrapper to the interface that will
-    likely be significantly changed or removed in a future release.
-    This version is only intended to be used with `SEOBNRv5HM` and `SEOBNRv5PHM` and
-    does not have full functionality for other waveform models.
-    """
-
-    from lalsimulation.gwsignal import GenerateFDWaveform
-    from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
-    import astropy.units as u
-
-    waveform_kwargs = dict(
-        waveform_approximant="SEOBNRv5PHM",
-        reference_frequency=50.0,
-        minimum_frequency=20.0,
-        maximum_frequency=frequency_array[-1],
-        catch_waveform_errors=False,
-        mode_array=None,
-        pn_amplitude_order=0,
-    )
-    waveform_kwargs.update(kwargs)
-
-    waveform_approximant = waveform_kwargs['waveform_approximant']
-    if waveform_approximant not in ["SEOBNRv5HM", "SEOBNRv5PHM"]:
-        if waveform_approximant == "IMRPhenomXPHM":
-            logger.warning("The new waveform interface is unreviewed for this model" +
-                           "and it is only intended for testing.")
-        else:
-            raise ValueError("The new waveform interface is unreviewed for this model.")
-    reference_frequency = waveform_kwargs['reference_frequency']
-    minimum_frequency = waveform_kwargs['minimum_frequency']
-    maximum_frequency = waveform_kwargs['maximum_frequency']
-    catch_waveform_errors = waveform_kwargs['catch_waveform_errors']
-    mode_array = waveform_kwargs['mode_array']
-    pn_amplitude_order = waveform_kwargs['pn_amplitude_order']
-
-    if pn_amplitude_order != 0:
-        # This is to mimic the behaviour in
-        # https://git.ligo.org/lscsoft/lalsuite/-/blob/master/lalsimulation/lib/LALSimInspiral.c#L5542
-        if pn_amplitude_order == -1:
-            if waveform_approximant in ["SpinTaylorT4", "SpinTaylorT5"]:
-                pn_amplitude_order = 3  # Equivalent to MAX_PRECESSING_AMP_PN_ORDER in LALSimulation
-            else:
-                pn_amplitude_order = 6  # Equivalent to MAX_NONPRECESSING_AMP_PN_ORDER in LALSimulation
-        start_frequency = minimum_frequency * 2. / (pn_amplitude_order + 2)
-    else:
-        start_frequency = minimum_frequency
-
-    # Call GWsignal generator
-    wf_gen = gwsignal_get_waveform_generator(waveform_approximant)
-
-    delta_frequency = frequency_array[1] - frequency_array[0]
-
-    frequency_bounds = ((frequency_array >= minimum_frequency) *
-                        (frequency_array <= maximum_frequency))
-
-    iota, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z = bilby_to_lalsimulation_spins(
-        theta_jn=theta_jn, phi_jl=phi_jl, tilt_1=tilt_1, tilt_2=tilt_2,
-        phi_12=phi_12, a_1=a_1, a_2=a_2, mass_1=mass_1 * utils.solar_mass, mass_2=mass_2 * utils.solar_mass,
-        reference_frequency=reference_frequency, phase=phase)
-
-    eccentricity = 0.0
-    longitude_ascending_nodes = 0.0
-    mean_per_ano = 0.0
-
-    # Check if conditioning is needed
-    condition = 0
-    if wf_gen.metadata["implemented_domain"] == 'time':
-        condition = 1
-
-    # Create dict for gwsignal generator
-    gwsignal_dict = {'mass1' : mass_1 * u.solMass,
-                     'mass2' : mass_2 * u.solMass,
-                     'spin1x' : spin_1x * u.dimensionless_unscaled,
-                     'spin1y' : spin_1y * u.dimensionless_unscaled,
-                     'spin1z' : spin_1z * u.dimensionless_unscaled,
-                     'spin2x' : spin_2x * u.dimensionless_unscaled,
-                     'spin2y' : spin_2y * u.dimensionless_unscaled,
-                     'spin2z' : spin_2z * u.dimensionless_unscaled,
-                     'deltaF' : delta_frequency * u.Hz,
-                     'f22_start' : start_frequency * u.Hz,
-                     'f_max': maximum_frequency * u.Hz,
-                     'f22_ref': reference_frequency * u.Hz,
-                     'phi_ref' : phase * u.rad,
-                     'distance' : luminosity_distance * u.Mpc,
-                     'inclination' : iota * u.rad,
-                     'eccentricity' : eccentricity * u.dimensionless_unscaled,
-                     'longAscNodes' : longitude_ascending_nodes * u.rad,
-                     'meanPerAno' : mean_per_ano * u.rad,
-                     # 'ModeArray': mode_array,
-                     'condition': condition
-                     }
-
-    if mode_array is not None:
-        gwsignal_dict.update(ModeArray=mode_array)
-
-    # Pass extra waveform arguments to gwsignal
-    extra_args = waveform_kwargs.copy()
-
-    for key in [
-            "waveform_approximant",
-            "reference_frequency",
-            "minimum_frequency",
-            "maximum_frequency",
-            "catch_waveform_errors",
-            "mode_array",
-            "pn_spin_order",
-            "pn_amplitude_order",
-            "pn_tidal_order",
-            "pn_phase_order",
-            "numerical_relativity_file",
-    ]:
-        if key in extra_args.keys():
-            del extra_args[key]
-
-    gwsignal_dict.update(extra_args)
-
-    try:
-        hpc = GenerateFDWaveform(gwsignal_dict, wf_gen)
-    except Exception as e:
-        if not catch_waveform_errors:
-            raise
-        else:
-            EDOM = (
-                "Internal function call failed: Input domain error" in e.args[0]
-            ) or "Input domain error" in e.args[
-                0
-            ]
-            if EDOM:
-                failed_parameters = dict(mass_1=mass_1, mass_2=mass_2,
-                                         spin_1=(spin_1x, spin_1y, spin_1z),
-                                         spin_2=(spin_2x, spin_2y, spin_2z),
-                                         luminosity_distance=luminosity_distance,
-                                         iota=iota, phase=phase,
-                                         eccentricity=eccentricity,
-                                         start_frequency=minimum_frequency)
-                logger.warning("Evaluating the waveform failed with error: {}\n".format(e) +
-                               "The parameters were {}\n".format(failed_parameters) +
-                               "Likelihood will be set to -inf.")
-                return None
-            else:
-                raise
-
-    hplus = hpc.hp
-    hcross = hpc.hc
-
-    h_plus = np.zeros_like(frequency_array, dtype=complex)
-    h_cross = np.zeros_like(frequency_array, dtype=complex)
-
-    if len(hplus) > len(frequency_array):
-        logger.debug("GWsignal waveform longer than bilby's `frequency_array`" +
-                     "({} vs {}), ".format(len(hplus), len(frequency_array)) +
-                     "probably because padded with zeros up to the next power of two length." +
-                     " Truncating GWsignal array.")
-        h_plus = hplus[:len(h_plus)]
-        h_cross = hcross[:len(h_cross)]
-    else:
-        h_plus[:len(hplus)] = hplus
-        h_cross[:len(hcross)] = hcross
-
-    h_plus *= frequency_bounds
-    h_cross *= frequency_bounds
-
-    if condition:
-        dt = 1 / hplus.df.value + hplus.epoch.value
-        time_shift = np.exp(-1j * 2 * np.pi * dt * frequency_array[frequency_bounds])
-        h_plus[frequency_bounds] *= time_shift
-        h_cross[frequency_bounds] *= time_shift
-
-    return dict(plus=h_plus, cross=h_cross)
 
 
 def lal_binary_black_hole(
@@ -283,7 +42,7 @@ def lal_binary_black_hole(
     theta_jn: float
         Angle between the total binary angular momentum and the line of sight
     phase: float
-        The phase at reference frequency or peak amplitude (depends on waveform)
+        The phase at coalescence
     kwargs: dict
         Optional keyword arguments
         Supported arguments:
@@ -366,7 +125,7 @@ def lal_binary_neutron_star(
     theta_jn: float
         Orbital inclination
     phase: float
-        The phase at reference frequency or peak amplitude (depends on waveform)
+        The phase at coalescence
     lambda_1: float
         Dimensionless tidal deformability of mass_1
     lambda_2: float
@@ -438,7 +197,7 @@ def lal_eccentric_binary_black_hole_no_spins(
     theta_jn: float
         Orbital inclination
     phase: float
-        The phase at reference frequency or peak amplitude (depends on waveform)
+        The phase at coalescence
     kwargs: dict
         Optional keyword arguments
         Supported arguments:
@@ -485,54 +244,6 @@ def lal_eccentric_binary_black_hole_no_spins(
         eccentricity=eccentricity, **waveform_kwargs)
 
 
-def set_waveform_dictionary(waveform_kwargs, lambda_1=0, lambda_2=0):
-    """
-    Add keyword arguments to the :code:`LALDict` object.
-
-    Parameters
-    ==========
-    waveform_kwargs: dict
-        A dictionary of waveform kwargs. This is modified in place to remove used arguments.
-    lambda_1: float
-        Dimensionless tidal deformability of the primary object.
-    lambda_2: float
-        Dimensionless tidal deformability of the primary object.
-
-    Returns
-    =======
-    waveform_dictionary: lal.LALDict
-        The lal waveform dictionary. This is either taken from the waveform_kwargs or created
-        internally.
-    """
-    import lalsimulation as lalsim
-    from lal import CreateDict
-    waveform_dictionary = waveform_kwargs.pop('lal_waveform_dictionary', CreateDict())
-    waveform_kwargs["TidalLambda1"] = lambda_1
-    waveform_kwargs["TidalLambda2"] = lambda_2
-    waveform_kwargs["NumRelData"] = waveform_kwargs.pop("numerical_relativity_data", None)
-
-    for key in [
-        "pn_spin_order", "pn_tidal_order", "pn_phase_order", "pn_amplitude_order"
-    ]:
-        waveform_kwargs[key[:2].upper() + key[3:].title().replace('_', '')] = waveform_kwargs.pop(key)
-
-    for key in list(waveform_kwargs.keys()).copy():
-        func = getattr(lalsim, f"SimInspiralWaveformParamsInsert{key}", None)
-        if func is None:
-            continue
-        value = waveform_kwargs.pop(key)
-        if func is not None and value is not None:
-            func(waveform_dictionary, value)
-
-    mode_array = waveform_kwargs.pop("mode_array", None)
-    if mode_array is not None:
-        mode_array_lal = lalsim.SimInspiralCreateModeArray()
-        for mode in mode_array:
-            lalsim.SimInspiralModeArrayActivateMode(mode_array_lal, mode[0], mode[1])
-        lalsim.SimInspiralWaveformParamsInsertModeArray(waveform_dictionary, mode_array_lal)
-    return waveform_dictionary
-
-
 def _base_lal_cbc_fd_waveform(
         frequency_array, mass_1, mass_2, luminosity_distance, theta_jn, phase,
         a_1=0.0, a_2=0.0, tilt_1=0.0, tilt_2=0.0, phi_12=0.0, phi_jl=0.0,
@@ -564,7 +275,7 @@ def _base_lal_cbc_fd_waveform(
     theta_jn: float
         Orbital inclination
     phase: float
-        The phase at reference frequency or peak amplitude (depends on waveform)
+        The phase at coalescence
     eccentricity: float
         Binary eccentricity
     lambda_1: float
@@ -578,16 +289,22 @@ def _base_lal_cbc_fd_waveform(
     =======
     dict: A dictionary with the plus and cross polarisation strain modes
     """
+    import lal
     import lalsimulation as lalsim
 
-    waveform_approximant = waveform_kwargs.pop('waveform_approximant')
-    reference_frequency = waveform_kwargs.pop('reference_frequency')
-    minimum_frequency = waveform_kwargs.pop('minimum_frequency')
-    maximum_frequency = waveform_kwargs.pop('maximum_frequency')
-    catch_waveform_errors = waveform_kwargs.pop('catch_waveform_errors')
+    waveform_approximant = waveform_kwargs['waveform_approximant']
+    reference_frequency = waveform_kwargs['reference_frequency']
+    minimum_frequency = waveform_kwargs['minimum_frequency']
+    maximum_frequency = waveform_kwargs['maximum_frequency']
+    catch_waveform_errors = waveform_kwargs['catch_waveform_errors']
+    pn_spin_order = waveform_kwargs['pn_spin_order']
+    pn_tidal_order = waveform_kwargs['pn_tidal_order']
+    pn_phase_order = waveform_kwargs['pn_phase_order']
     pn_amplitude_order = waveform_kwargs['pn_amplitude_order']
+    waveform_dictionary = waveform_kwargs.get(
+        'lal_waveform_dictionary', lal.CreateDict()
+    )
 
-    waveform_dictionary = set_waveform_dictionary(waveform_kwargs, lambda_1, lambda_2)
     approximant = lalsim_GetApproximantFromString(waveform_approximant)
 
     if pn_amplitude_order != 0:
@@ -613,6 +330,19 @@ def _base_lal_cbc_fd_waveform(
 
     longitude_ascending_nodes = 0.0
     mean_per_ano = 0.0
+
+    lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(
+        waveform_dictionary, int(pn_spin_order))
+    lalsim.SimInspiralWaveformParamsInsertPNTidalOrder(
+        waveform_dictionary, int(pn_tidal_order))
+    lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(
+        waveform_dictionary, int(pn_phase_order))
+    lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(
+        waveform_dictionary, int(pn_amplitude_order))
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda1(
+        waveform_dictionary, float(lambda_1))
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda2(
+        waveform_dictionary, float(lambda_2))
 
     for key, value in waveform_kwargs.items():
         func = getattr(lalsim, "SimInspiralWaveformParamsInsert" + key, None)
@@ -648,7 +378,7 @@ def _base_lal_cbc_fd_waveform(
             EDOM = (e.args[0] == 'Internal function call failed: Input domain error')
             if EDOM:
                 failed_parameters = dict(mass_1=mass_1, mass_2=mass_2,
-                                         spin_1=(spin_1x, spin_1y, spin_1z),
+                                         spin_1=(spin_1x, spin_2y, spin_1z),
                                          spin_2=(spin_2x, spin_2y, spin_2z),
                                          luminosity_distance=luminosity_distance,
                                          iota=iota, phase=phase,
@@ -691,9 +421,7 @@ def binary_black_hole_roq(
         frequency_array, mass_1, mass_2, luminosity_distance, a_1, tilt_1,
         phi_12, a_2, tilt_2, phi_jl, theta_jn, phase, **waveform_arguments):
     waveform_kwargs = dict(
-        waveform_approximant='IMRPhenomPv2', reference_frequency=20.0,
-        catch_waveform_errors=False, pn_spin_order=-1, pn_tidal_order=-1,
-        pn_phase_order=-1, pn_amplitude_order=0)
+        waveform_approximant='IMRPhenomPv2', reference_frequency=20.0)
     waveform_kwargs.update(waveform_arguments)
     return _base_roq_waveform(
         frequency_array=frequency_array, mass_1=mass_1, mass_2=mass_2,
@@ -707,9 +435,7 @@ def binary_neutron_star_roq(
         phi_12, a_2, tilt_2, phi_jl, lambda_1, lambda_2, theta_jn, phase,
         **waveform_arguments):
     waveform_kwargs = dict(
-        waveform_approximant='IMRPhenomD_NRTidal', reference_frequency=20.0,
-        catch_waveform_errors=False, pn_spin_order=-1, pn_tidal_order=-1,
-        pn_phase_order=-1, pn_amplitude_order=0)
+        waveform_approximant='IMRPhenomD_NRTidal', reference_frequency=20.0)
     waveform_kwargs.update(waveform_arguments)
     return _base_roq_waveform(
         frequency_array=frequency_array, mass_1=mass_1, mass_2=mass_2,
@@ -718,92 +444,12 @@ def binary_neutron_star_roq(
         phi_12=phi_12, lambda_1=lambda_1, lambda_2=lambda_2, **waveform_kwargs)
 
 
-def lal_binary_black_hole_relative_binning(
-        frequency_array, mass_1, mass_2, luminosity_distance, a_1, tilt_1,
-        phi_12, a_2, tilt_2, phi_jl, theta_jn, phase, fiducial, **kwargs):
-    """ Source model to go with RelativeBinningGravitationalWaveTransient likelihood.
-
-    All parameters are the same as in the usual source models, except `fiducial`
-
-    fiducial: float
-        If fiducial=1, waveform evaluated on the full frequency grid is returned.
-        If fiducial=0, waveform evaluated at waveform_kwargs["frequency_bin_edges"]
-        is returned.
-    """
-
-    waveform_kwargs = dict(
-        waveform_approximant='IMRPhenomPv2', reference_frequency=50.0,
-        minimum_frequency=20.0, maximum_frequency=frequency_array[-1],
-        catch_waveform_errors=False, pn_spin_order=-1, pn_tidal_order=-1,
-        pn_phase_order=-1, pn_amplitude_order=0)
-    waveform_kwargs.update(kwargs)
-
-    if fiducial == 1:
-        _ = waveform_kwargs.pop("frequency_bin_edges", None)
-        return _base_lal_cbc_fd_waveform(
-            frequency_array=frequency_array, mass_1=mass_1, mass_2=mass_2,
-            luminosity_distance=luminosity_distance, theta_jn=theta_jn, phase=phase,
-            a_1=a_1, a_2=a_2, tilt_1=tilt_1, tilt_2=tilt_2, phi_jl=phi_jl,
-            phi_12=phi_12, lambda_1=0.0, lambda_2=0.0, **waveform_kwargs)
-
-    else:
-        _ = waveform_kwargs.pop("minimum_frequency", None)
-        _ = waveform_kwargs.pop("maximum_frequency", None)
-        waveform_kwargs["frequencies"] = waveform_kwargs.pop("frequency_bin_edges")
-        return _base_waveform_frequency_sequence(
-            frequency_array=frequency_array, mass_1=mass_1, mass_2=mass_2,
-            luminosity_distance=luminosity_distance, theta_jn=theta_jn, phase=phase,
-            a_1=a_1, a_2=a_2, tilt_1=tilt_1, tilt_2=tilt_2, phi_jl=phi_jl,
-            phi_12=phi_12, lambda_1=0.0, lambda_2=0.0, **waveform_kwargs)
-
-
-def lal_binary_neutron_star_relative_binning(
-        frequency_array, mass_1, mass_2, luminosity_distance, a_1, tilt_1,
-        phi_12, a_2, tilt_2, phi_jl, lambda_1, lambda_2, theta_jn, phase,
-        fiducial, **kwargs):
-    """ Source model to go with RelativeBinningGravitationalWaveTransient likelihood.
-
-    All parameters are the same as in the usual source models, except `fiducial`
-
-    fiducial: float
-        If fiducial=1, waveform evaluated on the full frequency grid is returned.
-        If fiducial=0, waveform evaluated at waveform_kwargs["frequency_bin_edges"]
-        is returned.
-    """
-
-    waveform_kwargs = dict(
-        waveform_approximant='IMRPhenomPv2_NRTidal', reference_frequency=50.0,
-        minimum_frequency=20.0, maximum_frequency=frequency_array[-1],
-        catch_waveform_errors=False, pn_spin_order=-1, pn_tidal_order=-1,
-        pn_phase_order=-1, pn_amplitude_order=0)
-    waveform_kwargs.update(kwargs)
-
-    if fiducial == 1:
-        return _base_lal_cbc_fd_waveform(
-            frequency_array=frequency_array, mass_1=mass_1, mass_2=mass_2,
-            luminosity_distance=luminosity_distance, theta_jn=theta_jn, phase=phase,
-            a_1=a_1, a_2=a_2, tilt_1=tilt_1, tilt_2=tilt_2, phi_12=phi_12,
-            phi_jl=phi_jl, lambda_1=lambda_1, lambda_2=lambda_2, **waveform_kwargs)
-    else:
-        _ = waveform_kwargs.pop("minimum_frequency", None)
-        _ = waveform_kwargs.pop("maximum_frequency", None)
-        waveform_kwargs["frequencies"] = waveform_kwargs.pop("frequency_bin_edges")
-        return _base_waveform_frequency_sequence(
-            frequency_array=frequency_array, mass_1=mass_1, mass_2=mass_2,
-            luminosity_distance=luminosity_distance, theta_jn=theta_jn, phase=phase,
-            a_1=a_1, a_2=a_2, tilt_1=tilt_1, tilt_2=tilt_2, phi_jl=phi_jl,
-            phi_12=phi_12, lambda_1=lambda_1, lambda_2=lambda_2, **waveform_kwargs)
-
-
 def _base_roq_waveform(
         frequency_array, mass_1, mass_2, luminosity_distance, a_1, tilt_1,
         phi_12, a_2, tilt_2, lambda_1, lambda_2, phi_jl, theta_jn, phase,
         **waveform_arguments):
-    """ Base source model for ROQGravitationalWaveTransient, which evaluates
-    waveform values at frequency nodes contained in waveform_arguments. This
-    requires that waveform_arguments contain all of 'frequency_nodes',
-    'linear_indices', and 'quadratic_indices', or both 'frequency_nodes_linear' and
-    'frequency_nodes_quadratic'.
+    """
+    See https://git.ligo.org/lscsoft/lalsuite/blob/master/lalsimulation/src/LALSimInspiral.c#L1460
 
     Parameters
     ==========
@@ -830,21 +476,13 @@ def _base_roq_waveform(
     theta_jn: float
         Orbital inclination
     phase: float
-        The phase at reference frequency or peak amplitude (depends on waveform)
+        The phase at coalescence
 
     Waveform arguments
     ===================
     Non-sampled extra data used in the source model calculation
     frequency_nodes_linear: np.array
-        frequency nodes for linear likelihood part
     frequency_nodes_quadratic: np.array
-        frequency nodes for quadratic likelihood part
-    frequency_nodes: np.array
-        unique frequency nodes for linear and quadratic likelihood parts
-    linear_indices: np.array
-        indices to recover frequency nodes for linear part from unique frequency nodes
-    quadratic_indices: np.array
-        indices to recover frequency nodes for quadratic part from unique frequency nodes
     reference_frequency: float
     approximant: str
 
@@ -858,40 +496,51 @@ def _base_roq_waveform(
         Dict containing plus and cross modes evaluated at the linear and
         quadratic frequency nodes.
     """
-    if 'frequency_nodes' not in waveform_arguments:
-        size_linear = len(waveform_arguments['frequency_nodes_linear'])
-        frequency_nodes_combined = np.hstack(
-            (waveform_arguments.pop('frequency_nodes_linear'),
-             waveform_arguments.pop('frequency_nodes_quadratic'))
-        )
-        frequency_nodes_unique, original_indices = np.unique(
-            frequency_nodes_combined, return_inverse=True
-        )
-        linear_indices = original_indices[:size_linear]
-        quadratic_indices = original_indices[size_linear:]
-        waveform_arguments['frequencies'] = frequency_nodes_unique
-    else:
-        linear_indices = waveform_arguments.pop("linear_indices")
-        quadratic_indices = waveform_arguments.pop("quadratic_indices")
-        for key in ["frequency_nodes_linear", "frequency_nodes_quadratic"]:
-            _ = waveform_arguments.pop(key, None)
-        waveform_arguments['frequencies'] = waveform_arguments.pop('frequency_nodes')
-    waveform_polarizations = _base_waveform_frequency_sequence(
-        frequency_array=frequency_array, mass_1=mass_1, mass_2=mass_2,
-        luminosity_distance=luminosity_distance, theta_jn=theta_jn, phase=phase,
-        a_1=a_1, a_2=a_2, tilt_1=tilt_1, tilt_2=tilt_2, phi_jl=phi_jl,
-        phi_12=phi_12, lambda_1=lambda_1, lambda_2=lambda_2, **waveform_arguments)
+    from lal import CreateDict
+    frequency_nodes_linear = waveform_arguments['frequency_nodes_linear']
+    frequency_nodes_quadratic = waveform_arguments['frequency_nodes_quadratic']
+    reference_frequency = waveform_arguments['reference_frequency']
+    approximant = lalsim_GetApproximantFromString(
+        waveform_arguments['waveform_approximant'])
 
-    return {
-        'linear': {
-            'plus': waveform_polarizations['plus'][linear_indices],
-            'cross': waveform_polarizations['cross'][linear_indices]
-        },
-        'quadratic': {
-            'plus': waveform_polarizations['plus'][quadratic_indices],
-            'cross': waveform_polarizations['cross'][quadratic_indices]
-        }
-    }
+    luminosity_distance = luminosity_distance * 1e6 * utils.parsec
+    mass_1 = mass_1 * utils.solar_mass
+    mass_2 = mass_2 * utils.solar_mass
+
+    waveform_dictionary = CreateDict()
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda1(
+        waveform_dictionary, lambda_1)
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda2(
+        waveform_dictionary, lambda_2)
+
+    iota, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z = bilby_to_lalsimulation_spins(
+        theta_jn=theta_jn, phi_jl=phi_jl, tilt_1=tilt_1, tilt_2=tilt_2,
+        phi_12=phi_12, a_1=a_1, a_2=a_2, mass_1=mass_1, mass_2=mass_2,
+        reference_frequency=reference_frequency, phase=phase)
+
+    h_linear_plus, h_linear_cross = lalsim_SimInspiralChooseFDWaveformSequence(
+        phase, mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y,
+        spin_2z, reference_frequency, luminosity_distance, iota,
+        waveform_dictionary, approximant, frequency_nodes_linear)
+
+    waveform_dictionary = CreateDict()
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda1(
+        waveform_dictionary, lambda_1)
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda2(
+        waveform_dictionary, lambda_2)
+
+    h_quadratic_plus, h_quadratic_cross = lalsim_SimInspiralChooseFDWaveformSequence(
+        phase, mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y,
+        spin_2z, reference_frequency, luminosity_distance, iota,
+        waveform_dictionary, approximant, frequency_nodes_quadratic)
+
+    waveform_polarizations = dict()
+    waveform_polarizations['linear'] = dict(
+        plus=h_linear_plus.data.data, cross=h_linear_cross.data.data)
+    waveform_polarizations['quadratic'] = dict(
+        plus=h_quadratic_plus.data.data, cross=h_quadratic_cross.data.data)
+
+    return waveform_polarizations
 
 
 def binary_black_hole_frequency_sequence(
@@ -928,7 +577,7 @@ def binary_black_hole_frequency_sequence(
     theta_jn: float
         Angle between the total binary angular momentum and the line of sight
     phase: float
-        The phase at reference frequency or peak amplitude (depends on waveform)
+        The phase at coalescence
     kwargs: dict
         Required keyword arguments
         - frequencies:
@@ -1014,7 +663,7 @@ def binary_neutron_star_frequency_sequence(
     theta_jn: float
         Angle between the total binary angular momentum and the line of sight
     phase: float
-        The phase at reference frequency or peak amplitude (depends on waveform)
+        The phase at coalescence
     kwargs: dict
         Required keyword arguments
         - frequencies:
@@ -1090,7 +739,7 @@ def _base_waveform_frequency_sequence(
     theta_jn: float
         Orbital inclination
     phase: float
-        The phase at reference frequency or peak amplitude (depends on waveform)
+        The phase at coalescence
     waveform_kwargs: dict
         Optional keyword arguments
 
@@ -1100,13 +749,49 @@ def _base_waveform_frequency_sequence(
         Dict containing plus and cross modes evaluated at the linear and
         quadratic frequency nodes.
     """
-    frequencies = waveform_kwargs.pop('frequencies')
-    reference_frequency = waveform_kwargs.pop('reference_frequency')
-    approximant = waveform_kwargs.pop('waveform_approximant')
-    catch_waveform_errors = waveform_kwargs.pop('catch_waveform_errors')
+    from lal import CreateDict
+    import lalsimulation as lalsim
 
-    waveform_dictionary = set_waveform_dictionary(waveform_kwargs, lambda_1, lambda_2)
-    approximant = lalsim_GetApproximantFromString(approximant)
+    frequencies = waveform_kwargs['frequencies']
+    reference_frequency = waveform_kwargs['reference_frequency']
+    approximant = lalsim_GetApproximantFromString(waveform_kwargs['waveform_approximant'])
+    catch_waveform_errors = waveform_kwargs['catch_waveform_errors']
+    pn_spin_order = waveform_kwargs['pn_spin_order']
+    pn_tidal_order = waveform_kwargs['pn_tidal_order']
+    pn_phase_order = waveform_kwargs['pn_phase_order']
+    pn_amplitude_order = waveform_kwargs['pn_amplitude_order']
+    waveform_dictionary = waveform_kwargs.get(
+        'lal_waveform_dictionary', CreateDict()
+    )
+
+    lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(
+        waveform_dictionary, int(pn_spin_order))
+    lalsim.SimInspiralWaveformParamsInsertPNTidalOrder(
+        waveform_dictionary, int(pn_tidal_order))
+    lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(
+        waveform_dictionary, int(pn_phase_order))
+    lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(
+        waveform_dictionary, int(pn_amplitude_order))
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda1(
+        waveform_dictionary, float(lambda_1))
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda2(
+        waveform_dictionary, float(lambda_2))
+
+    for key, value in waveform_kwargs.items():
+        func = getattr(lalsim, "SimInspiralWaveformParamsInsert" + key, None)
+        if func is not None:
+            func(waveform_dictionary, value)
+
+    if waveform_kwargs.get('numerical_relativity_file', None) is not None:
+        lalsim.SimInspiralWaveformParamsInsertNumRelData(
+            waveform_dictionary, waveform_kwargs['numerical_relativity_file'])
+
+    if ('mode_array' in waveform_kwargs) and waveform_kwargs['mode_array'] is not None:
+        mode_array = waveform_kwargs['mode_array']
+        mode_array_lal = lalsim.SimInspiralCreateModeArray()
+        for mode in mode_array:
+            lalsim.SimInspiralModeArrayActivateMode(mode_array_lal, mode[0], mode[1])
+        lalsim.SimInspiralWaveformParamsInsertModeArray(waveform_dictionary, mode_array_lal)
 
     luminosity_distance = luminosity_distance * 1e6 * utils.parsec
     mass_1 = mass_1 * utils.solar_mass
@@ -1129,7 +814,7 @@ def _base_waveform_frequency_sequence(
             EDOM = (e.args[0] == 'Internal function call failed: Input domain error')
             if EDOM:
                 failed_parameters = dict(mass_1=mass_1, mass_2=mass_2,
-                                         spin_1=(spin_1x, spin_1y, spin_1z),
+                                         spin_1=(spin_1x, spin_2y, spin_1z),
                                          spin_2=(spin_2x, spin_2y, spin_2z),
                                          luminosity_distance=luminosity_distance,
                                          iota=iota, phase=phase)
@@ -1139,9 +824,6 @@ def _base_waveform_frequency_sequence(
                 return None
             else:
                 raise
-
-    if len(waveform_kwargs) > 0:
-        logger.warning(UNUSED_KWARGS_MESSAGE.format(waveform_kwargs))
 
     return dict(plus=h_plus.data.data, cross=h_cross.data.data)
 
@@ -1200,7 +882,7 @@ def sinegaussian(frequency_array, hrss, Q, frequency, **kwargs):
                (np.exp(-fm**2 * np.pi**2 * tau**2) -
                np.exp(-fp**2 * np.pi**2 * tau**2)))
 
-    return {'plus': h_plus, 'cross': h_cross}
+    return{'plus': h_plus, 'cross': h_cross}
 
 
 def supernova(frequency_array, luminosity_distance, **kwargs):
@@ -1325,21 +1007,10 @@ extrinsic = {
     "cos_theta_jn", "geocent_time", "time_jitter", "ra", "dec",
     "H1_time", "L1_time", "V1_time",
 }
-sky = {
-    "azimuth", "zenith", "ra", "dec",
-}
-distance_inclination = {
-    "luminosity_distance", "redshift", "theta_jn", "cos_theta_jn",
-}
-measured_spin = {
-    "chi_1", "chi_2", "a_1", "a_2", "chi_1_in_plane"
-}
 
 PARAMETER_SETS = dict(
     spin=spin, mass=mass, phase=phase, extrinsic=extrinsic,
     tidal=tidal, primary_spin_and_q=primary_spin_and_q,
     intrinsic=spin.union(mass).union(phase).union(tidal),
     precession_only=precession_only,
-    sky=sky, distance_inclination=distance_inclination,
-    measured_spin=measured_spin,
 )
