@@ -614,6 +614,22 @@ def _base_lal_cbc_fd_waveform(
     longitude_ascending_nodes = 0.0
     mean_per_ano = 0.0
 
+    for key, value in waveform_kwargs.items():
+        func = getattr(lalsim, "SimInspiralWaveformParamsInsert" + key, None)
+        if func is not None:
+            func(waveform_dictionary, value)
+
+    if waveform_kwargs.get('numerical_relativity_file', None) is not None:
+        lalsim.SimInspiralWaveformParamsInsertNumRelData(
+            waveform_dictionary, waveform_kwargs['numerical_relativity_file'])
+
+    if ('mode_array' in waveform_kwargs) and waveform_kwargs['mode_array'] is not None:
+        mode_array = waveform_kwargs['mode_array']
+        mode_array_lal = lalsim.SimInspiralCreateModeArray()
+        for mode in mode_array:
+            lalsim.SimInspiralModeArrayActivateMode(mode_array_lal, mode[0], mode[1])
+        lalsim.SimInspiralWaveformParamsInsertModeArray(waveform_dictionary, mode_array_lal)
+
     if lalsim.SimInspiralImplementedFDApproximants(approximant):
         wf_func = lalsim_SimInspiralChooseFDWaveform
     else:
@@ -667,9 +683,6 @@ def _base_lal_cbc_fd_waveform(
         time_shift = np.exp(-1j * 2 * np.pi * dt * frequency_array[frequency_bounds])
         h_plus[frequency_bounds] *= time_shift
         h_cross[frequency_bounds] *= time_shift
-
-    # if len(waveform_kwargs) > 0:
-    #     logger.warning(UNUSED_KWARGS_MESSAGE.format(waveform_kwargs))
 
     return dict(plus=h_plus, cross=h_cross)
 
