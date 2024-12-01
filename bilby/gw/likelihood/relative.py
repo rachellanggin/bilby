@@ -250,7 +250,7 @@ class RelativeBinningGravitationalWaveTransient(GravitationalWaveTransient):
 
         for interferometer in self.interferometers:
             logger.debug(f"Maximum Frequency is {interferometer.maximum_frequency}")
-            wf = interferometer.get_detector_response(self.fiducial_polarizations, parameters)
+            wf = interferometer.get_detector_response(self.fiducial_polarizations, self.parameters)
             wf[interferometer.frequency_array > self.maximum_frequency] = 0
             self.per_detector_fiducial_waveforms[interferometer.name] = wf
 
