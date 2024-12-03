@@ -339,6 +339,7 @@ class Interferometer(object):
                 return
 
         chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
+        print(chirp_mass)
 
         det_response_plus, det_response_cross = self.antenna_response(
             parameters['ra'],
