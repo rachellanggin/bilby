@@ -249,7 +249,7 @@ class Interferometer(object):
             sampling_frequency=sampling_frequency, duration=duration,
             start_time=start_time)
 
-    def antenna_response(self, ra, dec, time, psi, chirp_mass, frequency):
+    def antenna_response(self, ra, dec, time, psi, frequency):
         """
         Calculate the antenna response function for a given sky location
 
@@ -282,8 +282,8 @@ class Interferometer(object):
         array_like: The antenna response for the specified mode
 
         """
-        polarization_tensor_plus, polarization_tensor_cross = gwutils.get_polarization_tensor(
-            ra, dec, time, psi, chirp_mass, frequency)
+        polarization_tensor_plus, polarization_tensor_cross = get_polarization_tensor(
+            ra, dec, time, psi, frequency)
         antenna_response_plus = np.einsum(
             'ijk,ij->k', polarization_tensor_plus, self.geometry.detector_tensor)
         antenna_response_cross = np.einsum(
@@ -324,29 +324,28 @@ class Interferometer(object):
         args_above_threshold_frequency = np.where(
             self.strain_data.frequency_array > threshold_frequency)[0]
 
-        try:
-            parameters = generate_all_bns_parameters(parameters)
-        except AttributeError:
-            logger.debug(
-                "generate_all_bbh_parameters parameters failed during check_signal_duration"
-            )
-            return
+        # try:
+        #     parameters = generate_all_bns_parameters(parameters)
+        # except AttributeError:
+        #     logger.debug(
+        #         "generate_all_bns_parameters parameters failed during get_detector_response"
+        #     )
+        #     return
 
-        if ("mass_1" not in parameters) and ("mass_2" not in parameters):
-            if raise_error:
-                raise AttributeError("Unable to check signal duration as mass not given")
-            else:
-                return
-
-        chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
-        print(chirp_mass)
+        # if ("mass_1" not in parameters) and ("mass_2" not in parameters):
+        #     if raise_error:
+        #         raise AttributeError("Unable to check signal duration as mass not given")
+        #     else:
+        #         return
+        # parameters from relative.py are not compatible with the parameters from relative.py 
+        # chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
+        # print(chirp_mass)
 
         det_response_plus, det_response_cross = self.antenna_response(
             parameters['ra'],
             parameters['dec'],
             parameters['geocent_time'],
             parameters['psi'],
-            chirp_mass,
             cut_frequency)
 
         # we don't care about fill_array_below, but we keep it 
@@ -354,10 +353,8 @@ class Interferometer(object):
 
         fill_array_below = np.ones(len(args_below_fmin)) * det_response_plus[0] 
         fill_array_above = np.ones(len(args_above_threshold_frequency)) * det_response_plus[-1]    
-        final_antenna_response_plus = np.append(
-            np.append(fill_array_below, det_response_plus),
-            fill_array_above
-            )
+        final_antenna_response_plus = np.append(np.append(fill_array_below, det_response_plus),
+                                                fill_array_above)
 
         fill_array_below = np.ones(len(args_below_fmin))*det_response_cross[0] 
         fill_array_above = np.ones(len(args_above_threshold_frequency))*det_response_cross[-1]    
