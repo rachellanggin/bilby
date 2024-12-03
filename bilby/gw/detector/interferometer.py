@@ -13,7 +13,7 @@ from .. import utils as gwutils
 from .calibration import Recalibrate
 from .geometry import InterferometerGeometry
 from .strain_data import InterferometerStrainData
-from ..conversion import generate_all_bbh_parameters, component_masses_to_chirp_mass
+from ..conversion import generate_all_bbh_parameters, generate_all_bns_parameters, component_masses_to_chirp_mass
 
 
 class Interferometer(object):
@@ -292,7 +292,7 @@ class Interferometer(object):
         # return np.einsum('ij,ij->', self.geometry.detector_tensor, polarization_tensor)
         return antenna_response_plus, antenna_response_cross
 
-    def get_detector_response(self, waveform_polarizations, parameters, frequencies=None):
+    def get_detector_response(self, waveform_polarizations, parameters, frequencies=None, raise_error=True):
         """ Get the detector response for a particular waveform
 
         Parameters
@@ -302,6 +302,7 @@ class Interferometer(object):
         parameters: dict
             parameters describing position and time of arrival of the signal
         frequencies: array-like, optional
+        raise_error: catches parameter errors, optional
         The frequency values to evaluate the response at. If
         not provided, the response is computed using
         :code:`self.frequency_array`. If the frequencies are
@@ -317,12 +318,26 @@ class Interferometer(object):
             self.strain_data.frequency_array >= self.strain_data.minimum_frequency) & 
             (self.strain_data.frequency_array <= threshold_frequency)).flatten()
         cut_frequency = self.strain_data.frequency_array[args]
-        
+
         args_below_fmin = np.where(
             self.strain_data.frequency_array < self.strain_data.minimum_frequency)[0]
         args_above_threshold_frequency = np.where(
             self.strain_data.frequency_array > threshold_frequency)[0]
-        
+
+        try:
+            parameters = generate_all_bns_parameters(parameters)
+        except AttributeError:
+            logger.debug(
+                "generate_all_bbh_parameters parameters failed during check_signal_duration"
+            )
+            return
+
+        if ("mass_1" not in parameters) and ("mass_2" not in parameters):
+            if raise_error:
+                raise AttributeError("Unable to check signal duration as mass not given")
+            else:
+                return
+
         chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
 
         det_response_plus, det_response_cross = self.antenna_response(
