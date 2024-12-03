@@ -282,7 +282,7 @@ class Interferometer(object):
         array_like: The antenna response for the specified mode
 
         """
-        polarization_tensor_plus, polarization_tensor_cross = get_polarization_tensor(
+        polarization_tensor_plus, polarization_tensor_cross = gwutils.get_polarization_tensor(
             ra, dec, time, psi, frequency)
         antenna_response_plus = np.einsum(
             'ijk,ij->k', polarization_tensor_plus, self.geometry.detector_tensor)
