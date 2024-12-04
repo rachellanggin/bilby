@@ -750,18 +750,18 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         else:
             time_ref = self.parameters['geocent_time']
 
-        threshold_frequency = 21    
-        args = np.argwhere((
-            interferometer.strain_data.frequency_array >= interferometer.strain_data.minimum_frequency) & 
-            (interferometer.strain_data.frequency_array <= threshold_frequency)).flatten()
-        cut_frequency = interferometer.strain_data.frequency_array[args]
+        # threshold_frequency = 21    
+        # args = np.argwhere((
+        #     interferometer.strain_data.frequency_array >= interferometer.strain_data.minimum_frequency) & 
+        #     (interferometer.strain_data.frequency_array <= threshold_frequency)).flatten()
+        # cut_frequency = interferometer.strain_data.frequency_array[args]
 
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex)
         for mode in waveform_polarizations:
             response = interferometer.antenna_response(
                 self.parameters['ra'], self.parameters['dec'],
                 time_ref, self.parameters['psi'], mode,
-                cut_frequency
+                self.banded_frequency_points
             )
             strain += waveform_polarizations[mode][self.unique_to_original_frequencies] * response
 
