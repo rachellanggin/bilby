@@ -760,7 +760,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         for mode in waveform_polarizations:
             response = interferometer.antenna_response(
                 self.parameters['ra'], self.parameters['dec'],
-                time_ref, self.parameters['psi'], mode,
+                time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
                 self.banded_frequency_points
             )
             strain += waveform_polarizations[mode][self.unique_to_original_frequencies] * response
