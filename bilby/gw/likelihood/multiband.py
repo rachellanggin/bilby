@@ -765,14 +765,14 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             )
             strain += waveform_polarizations[mode][self.unique_to_original_frequencies] * response
 
-        dt = interferometer.time_delay_from_geocenter(
-            self.parameters['ra'], self.parameters['dec'], time_ref)
-        dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
-        ifo_time = dt_geocent + dt
-        strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
+        # dt = interferometer.time_delay_from_geocenter(
+        #     self.parameters['ra'], self.parameters['dec'], time_ref)
+        # dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
+        # ifo_time = dt_geocent + dt
+        # strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
 
-        strain *= interferometer.calibration_model.get_calibration_factor(
-            self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
+        # strain *= interferometer.calibration_model.get_calibration_factor(
+        #     self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
 
         d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name]))
 
