@@ -217,7 +217,7 @@ class RelativeBinningGravitationalWaveTransient(GravitationalWaveTransient):
         self.bin_inds = np.array(bin_inds, dtype=int)
         self.bin_sizes = np.diff(bin_inds)
         self.bin_sizes[-1] += 1
-        self.bin_freqs = np.array(bin_freqs)
+        self.bin_freqs = np.array(bin_freqs) ## *** These are the ones you want
         self.number_of_bins = len(self.bin_inds) - 1
         logger.debug(
             f"Set up {self.number_of_bins} bins "

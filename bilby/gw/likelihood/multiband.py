@@ -758,6 +758,14 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex)
 
+    #   for mode in waveform_polarizations:
+        # response = interferometer.antenna_response(
+        #     self.parameters['ra'], self.parameters['dec'],
+        #     self.parameters['geocent_time'], self.parameters['psi'],
+        #     mode
+        # )
+        # strain += waveform_polarizations[mode][self.unique_to_original_frequencies] * response
+
         response_plus = {'plus': np.zeros(len(self.banded_frequency_points))}
         response_cross = {'cross': np.zeros(len(self.banded_frequency_points))}
 
@@ -768,6 +776,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         
         strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus 
         strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
+
         # dt = interferometer.time_delay_from_geocenter(
         #     self.parameters['ra'], self.parameters['dec'], time_ref)
         # dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
@@ -838,7 +847,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         for interferometer in self.interferometers:
             snrs += self.calculate_snrs(
                 waveform_polarizations=signal_polarizations,
-                interferometer=interferometer
+                interferometer=interferometer, return_array=True
             )
         d_inner_h = snrs.d_inner_h_array
         h_inner_h = snrs.optimal_snr_squared
