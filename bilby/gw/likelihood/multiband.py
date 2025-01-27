@@ -771,20 +771,23 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
-            time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
+            self.parameters['geocent_time'], self.parameters['psi'], self.parameters['chirp_mass'], # should time_ref instead be geocent_time
             self.banded_frequency_points)
         
         strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus 
         strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
 
-        # dt = interferometer.time_delay_from_geocenter(
-        #     self.parameters['ra'], self.parameters['dec'], time_ref)
-        # dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
-        # ifo_time = dt_geocent + dt
-        # strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
+        dt = interferometer.time_delay_from_geocenter(
+            self.parameters['ra'], self.parameters['dec'],
+            self.parameters['geocent_time'])
+        dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
+        ifo_time = dt_geocent + dt
 
-        # strain *= interferometer.calibration_model.get_calibration_factor(
-        #     self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
+        calib_factor = interferometer.calibration_model.get_calibration_factor(
+            self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
+
+        strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
+        strain *= calib_factor
 
         d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name]))
 
