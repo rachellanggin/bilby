@@ -359,8 +359,8 @@ class Interferometer(object):
             fill_array_above
             )
 
-        fill_array_below = np.ones(len(args_below_fmin))*det_response_cross[0] 
-        fill_array_above = np.ones(len(args_above_threshold_frequency))*det_response_cross[-1]    
+        fill_array_below = np.ones(len(args_below_fmin)) * det_response_cross[0] 
+        fill_array_above = np.ones(len(args_above_threshold_frequency)) * det_response_cross[-1]    
         final_antenna_response_cross = np.append(
             np.append(fill_array_below, det_response_cross),
             fill_array_above

@@ -750,36 +750,24 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         else:
             time_ref = self.parameters['geocent_time']
 
-        # threshold_frequency = 21    
-        # args = np.argwhere((
-        #     interferometer.strain_data.frequency_array >= interferometer.strain_data.minimum_frequency) & 
-        #     (interferometer.strain_data.frequency_array <= threshold_frequency)).flatten()
-        # cut_frequency = interferometer.strain_data.frequency_array[args]
-
-        strain = np.zeros(len(self.banded_frequency_points), dtype=complex)
-
-    #   for mode in waveform_polarizations:
-        # response = interferometer.antenna_response(
-        #     self.parameters['ra'], self.parameters['dec'],
-        #     self.parameters['geocent_time'], self.parameters['psi'],
-        #     mode
-        # )
-        # strain += waveform_polarizations[mode][self.unique_to_original_frequencies] * response
+        strain = np.zeros(len(self.banded_frequency_points), dtype=complex) 
 
         response_plus = {'plus': np.zeros(len(self.banded_frequency_points))}
         response_cross = {'cross': np.zeros(len(self.banded_frequency_points))}
 
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
-            self.parameters['geocent_time'], self.parameters['psi'], self.parameters['chirp_mass'], # should time_ref instead be geocent_time
+            self.parameters['geocent_time'], self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
             self.banded_frequency_points)
         print("antenna_responses: ", response_plus, response_cross) 
-        strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus 
+
+        strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus  
         strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
         print("strain (waveform polarizations): ", strain)
+        
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
-            self.parameters['geocent_time'])
+            time_ref)
         dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
         print("geocenter-start_time: ", dt_geocent)
         ifo_time = dt_geocent + dt
