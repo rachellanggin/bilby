@@ -759,29 +759,22 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             self.parameters['ra'], self.parameters['dec'],
             self.parameters['geocent_time'], self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
             self.banded_frequency_points)
-        print("antenna_responses: ", response_plus, response_cross) 
 
         strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus  
         strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
-        print("strain (waveform polarizations): ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
             time_ref)
         dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
-        print("geocenter-start_time: ", dt_geocent)
         ifo_time = dt_geocent + dt
-        print("ifo_time: ", ifo_time)
 
         calib_factor = interferometer.calibration_model.get_calibration_factor(
             self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
-        print("calib_factor: ", calib_factor)
         strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
         strain *= calib_factor
-        print("strain (after calib): ", strain)
 
         d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name]))
-        print("d_inner_h: ", d_inner_h)
 
         if self.linear_interpolation:
             optimal_snr_squared = np.vdot(
