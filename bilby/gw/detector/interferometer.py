@@ -388,7 +388,7 @@ class Interferometer(object):
             self.strain_data.frequency_array[self.strain_data.frequency_mask],
             prefix='recalib_{}_'.format(self.name), **parameters)
 
-        return signal_ifo[self.strain_data.frequency_mask]
+        return signal_ifo
 
     def check_signal_duration(self, parameters, raise_error=True):
         """ Check that the signal with the given parameters fits in the data
