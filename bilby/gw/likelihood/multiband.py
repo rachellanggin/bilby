@@ -37,7 +37,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
     accuracy_factor: float, optional
         A parameter to determine the accuracy of multi-banding. The larger this factor is, the more accurate the
         approximation is. This corresponds to L in the paper. Default is 5.
-    time_offset: float, optional
+    : float, optionaltime_offset
         (end time of data) - (maximum arrival time). If None, it is inferred from the prior of geocent time.
     delta_f_end: float, optional
         The frequency scale with which waveforms at the high-frequency end are smoothed. If None, it is determined from
