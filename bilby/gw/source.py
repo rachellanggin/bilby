@@ -829,7 +829,8 @@ def _base_waveform_frequency_sequence(
     from lal import CreateDict
     import lalsimulation as lalsim
 
-    frequencies = waveform_kwargs.pop['frequencies']
+    minimum_frequency = waveform_kwargs.pop['minimum_frequency']
+    maximum_frequency = waveform_kwargs.pop['maximum_frequency']
     reference_frequency = waveform_kwargs.pop['reference_frequency']
     approximant = waveform_kwargs.pop('waveform_approximant')
     catch_waveform_errors = waveform_kwargs.pop('catch_waveform_errors')
@@ -850,7 +851,7 @@ def _base_waveform_frequency_sequence(
         h_plus, h_cross = lalsim_SimInspiralChooseFDWaveformSequence(
             phase, mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y,
             spin_2z, reference_frequency, luminosity_distance, iota,
-            waveform_dictionary, approximant, frequencies)
+            waveform_dictionary, approximant, frequency_array)
     except Exception as e:
         if not catch_waveform_errors:
             raise
