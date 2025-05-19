@@ -759,14 +759,15 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         response_plus = {'plus': np.zeros(len(self.banded_frequency_points))}
         response_cross = {'cross': np.zeros(len(self.banded_frequency_points))}
+        print('banded_frequency_points: ', self.banded_frequency_points)
         
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             self.parameters['geocent_time'], self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
-            self.banded_frequency_points)
+            self.unique_to_original_frequencies)
 
-        strain += waveform_polarizations['plus'][self.banded_frequency_points] * response_plus  
-        strain += waveform_polarizations['cross'][self.banded_frequency_points] * response_cross
+        strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus  
+        strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
         print("strain before: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
