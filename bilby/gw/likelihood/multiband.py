@@ -297,7 +297,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
     @property
     def minimum_frequency(self):
-        return np.min([i.frequency_array for i in self.interferometers]) 
+        return np.min([i.minimum_frequency for i in self.interferometers]) 
 
     @minimum_frequency.setter
     def minimum_frequency(self, freq):
