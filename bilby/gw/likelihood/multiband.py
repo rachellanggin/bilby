@@ -458,7 +458,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         """
         self.banded_frequency_points = np.array([])
         self.start_end_idxs = []
-        start_idx = 0
+        start_idx = self.minimum_banding_duration
         for i in range(self.number_of_bands):
             d = self.durations[i]
             Ks, Ke = self.Ks_Ke[i]
@@ -754,14 +754,11 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         response_plus = {'plus': np.zeros(len(self.banded_frequency_points))}
         response_cross = {'cross': np.zeros(len(self.banded_frequency_points))}
-
-        valid_freqs = self.waveform_generator.waveform_arguments['frequencies']
-        valid_freqs = valid_freqs[(valid_freqs >= self.minimum_frequency) & (valid_freqs <= self.maximum_frequency)]
-
+        
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             self.parameters['geocent_time'], self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
-            valid_freqs)
+            self.unique_to_original_frequencies)
 
         strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus  
         strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
@@ -770,8 +767,11 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
             time_ref)
+        print('dt: ', dt)
         dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
+        print('dt_geocent: ', dt_geocent)
         ifo_time = dt_geocent + dt
+        print('ifo_time: ', ifo_time)
 
         calib_factor = interferometer.calibration_model.get_calibration_factor(
             self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
