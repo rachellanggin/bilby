@@ -15,7 +15,7 @@ class InterferometerStrainData(object):
     frequency_array = PropertyAccessor('_times_and_frequencies', 'frequency_array')
     time_array = PropertyAccessor('_times_and_frequencies', 'time_array')
 
-    def __init__(self, minimum_frequency=0, maximum_frequency=np.inf,
+    def __init__(self, minimum_frequency=7.0, maximum_frequency=np.inf, # change minimum from 0.0 to CE 7.0
                  roll_off=0.2, notch_list=None):
         """ Initiate an InterferometerStrainData object
 
