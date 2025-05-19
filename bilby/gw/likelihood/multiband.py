@@ -458,7 +458,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         """
         self.banded_frequency_points = np.array([])
         self.start_end_idxs = []
-        start_idx = self.minimum_banding_duration
+        start_idx = 0.0
         for i in range(self.number_of_bands):
             d = self.durations[i]
             Ks, Ke = self.Ks_Ke[i]
