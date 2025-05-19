@@ -829,11 +829,11 @@ def _base_waveform_frequency_sequence(
     from lal import CreateDict
     import lalsimulation as lalsim
 
-    minimum_frequency = waveform_kwargs.pop['minimum_frequency']
-    maximum_frequency = waveform_kwargs.pop['maximum_frequency']
-    reference_frequency = waveform_kwargs.pop['reference_frequency']
-    approximant = waveform_kwargs.pop('waveform_approximant')
-    catch_waveform_errors = waveform_kwargs.pop('catch_waveform_errors')
+    minimum_frequency = waveform_kwargs['minimum_frequency']
+    maximum_frequency = waveform_kwargs['maximum_frequency']
+    reference_frequency = waveform_kwargs['reference_frequency']
+    approximant = waveform_kwargs['waveform_approximant']
+    catch_waveform_errors = waveform_kwargs['catch_waveform_errors']
 
     waveform_dictionary = set_waveform_dictionary(waveform_kwargs, lambda_1, lambda_2)
     approximant = lalsim_GetApproximantFromString(approximant)
