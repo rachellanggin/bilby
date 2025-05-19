@@ -243,6 +243,54 @@ def lal_eccentric_binary_black_hole_no_spins(
         luminosity_distance=luminosity_distance, theta_jn=theta_jn, phase=phase,
         eccentricity=eccentricity, **waveform_kwargs)
 
+    def set_waveform_dictionary(waveform_kwargs, lambda_1=0, lambda_2=0):
+    """
+    Add keyword arguments to the :code:`LALDict` object.
+
+    Parameters
+    ==========
+    waveform_kwargs: dict
+        A dictionary of waveform kwargs. This is modified in place to remove used arguments.
+    lambda_1: float
+        Dimensionless tidal deformability of the primary object.
+    lambda_2: float
+        Dimensionless tidal deformability of the primary object.
+
+    Returns
+    =======
+    waveform_dictionary: lal.LALDict
+        The lal waveform dictionary. This is either taken from the waveform_kwargs or created
+        internally.
+    """
+    import lalsimulation as lalsim
+    from lal import CreateDict
+    waveform_dictionary = waveform_kwargs.pop('lal_waveform_dictionary', CreateDict())
+    waveform_kwargs["TidalLambda1"] = lambda_1
+    waveform_kwargs["TidalLambda2"] = lambda_2
+    waveform_kwargs["NumRelData"] = waveform_kwargs.pop("numerical_relativity_file", None)
+
+    for key in [
+        "pn_spin_order", "pn_tidal_order", "pn_phase_order", "pn_amplitude_order"
+    ]:
+        waveform_kwargs[key[:2].upper() + key[3:].title().replace('_', '')] = waveform_kwargs.pop(key)
+
+    for key in list(waveform_kwargs.keys()).copy():
+        func = getattr(lalsim, f"SimInspiralWaveformParamsInsert{key}", None)
+        if func is None:
+            continue
+        value = waveform_kwargs.pop(key)
+        if func is not None and value is not None:
+            func(waveform_dictionary, value)
+
+    mode_array = waveform_kwargs.pop("mode_array", None)
+    if mode_array is not None:
+        mode_array_lal = lalsim.SimInspiralCreateModeArray()
+        for mode in mode_array:
+            mode = tuple(map(safe_cast_mode_to_int, mode))
+            lalsim.SimInspiralModeArrayActivateMode(mode_array_lal, mode[0], mode[1])
+        lalsim.SimInspiralWaveformParamsInsertModeArray(waveform_dictionary, mode_array_lal)
+    return waveform_dictionary
+
 
 def _base_lal_cbc_fd_waveform(
         frequency_array, mass_1, mass_2, luminosity_distance, theta_jn, phase,
@@ -834,7 +882,7 @@ def _base_waveform_frequency_sequence(
     reference_frequency = waveform_kwargs['reference_frequency']
     approximant = waveform_kwargs['waveform_approximant']
     catch_waveform_errors = waveform_kwargs['catch_waveform_errors']
-
+    
     waveform_dictionary = set_waveform_dictionary(waveform_kwargs, lambda_1, lambda_2)
     approximant = lalsim_GetApproximantFromString(approximant)
     
