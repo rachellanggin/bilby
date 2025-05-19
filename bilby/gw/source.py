@@ -878,15 +878,47 @@ def _base_waveform_frequency_sequence(
     from lal import CreateDict
     import lalsimulation as lalsim
 
-    minimum_frequency = waveform_kwargs['minimum_frequency']
-    maximum_frequency = waveform_kwargs['maximum_frequency']
+    frequencies = waveform_kwargs['frequencies']
     reference_frequency = waveform_kwargs['reference_frequency']
-    approximant = waveform_kwargs['waveform_approximant']
+    approximant = lalsim_GetApproximantFromString(waveform_kwargs['waveform_approximant'])
     catch_waveform_errors = waveform_kwargs['catch_waveform_errors']
-    
-    waveform_dictionary = set_waveform_dictionary(waveform_kwargs, lambda_1, lambda_2)
-    approximant = lalsim_GetApproximantFromString(approximant)
-    
+    pn_spin_order = waveform_kwargs['pn_spin_order']
+    pn_tidal_order = waveform_kwargs['pn_tidal_order']
+    pn_phase_order = waveform_kwargs['pn_phase_order']
+    pn_amplitude_order = waveform_kwargs['pn_amplitude_order']
+    waveform_dictionary = waveform_kwargs.get(
+        'lal_waveform_dictionary', CreateDict()
+    )
+
+    lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(
+        waveform_dictionary, int(pn_spin_order))
+    lalsim.SimInspiralWaveformParamsInsertPNTidalOrder(
+        waveform_dictionary, int(pn_tidal_order))
+    lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(
+        waveform_dictionary, int(pn_phase_order))
+    lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(
+        waveform_dictionary, int(pn_amplitude_order))
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda1(
+        waveform_dictionary, float(lambda_1))
+    lalsim_SimInspiralWaveformParamsInsertTidalLambda2(
+        waveform_dictionary, float(lambda_2))
+
+    for key, value in waveform_kwargs.items():
+        func = getattr(lalsim, "SimInspiralWaveformParamsInsert" + key, None)
+        if func is not None:
+            func(waveform_dictionary, value)
+
+    if waveform_kwargs.get('numerical_relativity_file', None) is not None:
+        lalsim.SimInspiralWaveformParamsInsertNumRelData(
+            waveform_dictionary, waveform_kwargs['numerical_relativity_file'])
+
+    if ('mode_array' in waveform_kwargs) and waveform_kwargs['mode_array'] is not None:
+        mode_array = waveform_kwargs['mode_array']
+        mode_array_lal = lalsim.SimInspiralCreateModeArray()
+        for mode in mode_array:
+            lalsim.SimInspiralModeArrayActivateMode(mode_array_lal, mode[0], mode[1])
+        lalsim.SimInspiralWaveformParamsInsertModeArray(waveform_dictionary, mode_array_lal)
+
     luminosity_distance = luminosity_distance * 1e6 * utils.parsec
     mass_1 = mass_1 * utils.solar_mass
     mass_2 = mass_2 * utils.solar_mass
@@ -900,7 +932,7 @@ def _base_waveform_frequency_sequence(
         h_plus, h_cross = lalsim_SimInspiralChooseFDWaveformSequence(
             phase, mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y,
             spin_2z, reference_frequency, luminosity_distance, iota,
-            waveform_dictionary, approximant, frequency_array)
+            waveform_dictionary, approximant, frequencies)
     except Exception as e:
         if not catch_waveform_errors:
             raise
@@ -908,7 +940,7 @@ def _base_waveform_frequency_sequence(
             EDOM = (e.args[0] == 'Internal function call failed: Input domain error')
             if EDOM:
                 failed_parameters = dict(mass_1=mass_1, mass_2=mass_2,
-                                         spin_1=(spin_1x, spin_1y, spin_1z),
+                                         spin_1=(spin_1x, spin_2y, spin_1z),
                                          spin_2=(spin_2x, spin_2y, spin_2z),
                                          luminosity_distance=luminosity_distance,
                                          iota=iota, phase=phase)
@@ -918,9 +950,6 @@ def _base_waveform_frequency_sequence(
                 return None
             else:
                 raise
-
-    if len(waveform_kwargs) > 0:
-        logger.warning(UNUSED_KWARGS_MESSAGE.format(waveform_kwargs=waveform_kwargs))
 
     return dict(plus=h_plus.data.data, cross=h_cross.data.data)
 

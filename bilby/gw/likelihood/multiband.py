@@ -763,10 +763,10 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             self.parameters['geocent_time'], self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
-            self.unique_to_original_frequencies)
+            self.banded_frequency_points)
 
-        strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus  
-        strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
+        strain += waveform_polarizations['plus'][self.banded_frequency_points] * response_plus  
+        strain += waveform_polarizations['cross'][self.banded_frequency_points] * response_cross
         print("strain before: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
@@ -790,6 +790,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
                 np.real(strain * np.conjugate(strain)),
                 self.quadratic_coeffs[interferometer.name]
             )
+            print('optimal_snr_squared after linear_interpolatio:', optimal_snr_squared)
         else:
             optimal_snr_squared = 0.
             for b in range(self.number_of_bands):
@@ -811,6 +812,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
                         np.real(thbc * np.conjugate(thbc)), self.Ibcs[interferometer.name][b])
 
         complex_matched_filter_snr = d_inner_h / (optimal_snr_squared**0.5)
+        print('complex_matched_filter_snr: ', complex_matched_filter_snr)
 
         if return_array and self.time_marginalization:
             self._full_d_h[self._full_to_multiband] *= 0
