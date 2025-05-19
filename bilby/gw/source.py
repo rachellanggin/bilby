@@ -243,7 +243,8 @@ def lal_eccentric_binary_black_hole_no_spins(
         luminosity_distance=luminosity_distance, theta_jn=theta_jn, phase=phase,
         eccentricity=eccentricity, **waveform_kwargs)
 
-    def set_waveform_dictionary(waveform_kwargs, lambda_1=0, lambda_2=0):
+
+def set_waveform_dictionary(waveform_kwargs, lambda_1=0, lambda_2=0):
     """
     Add keyword arguments to the :code:`LALDict` object.
 
