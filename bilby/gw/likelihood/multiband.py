@@ -537,13 +537,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         for ifo in self.interferometers:
             logger.info("Pre-computing linear coefficients for {}".format(ifo.name))
             fddata = np.zeros(N // 2 + 1, dtype=complex)
-            threshold_frequency = 16 # 21
-            args = np.argwhere((
-                ifo.strain_data.frequency_array >= ifo.minimum_frequency) & 
-                (ifo.strain_data.frequency_array <= threshold_frequency)).flatten()
-            cut_frequency = ifo.strain_data.frequency_array[args]
-            fddata[:len(ifo.frequency_domain_strain)][cut_frequency[:len(fddata)]] += \
-                ifo.frequency_domain_strain[cut_frequency] / ifo.power_spectral_density_array[cut_frequency]
+            fddata[:len(ifo.frequency_domain_strain)][ifo.frequency_mask[:len(fddata)]] += \
+                ifo.frequency_domain_strain[ifo.frequency_mask] / ifo.power_spectral_density_array[ifo.frequency_mask]
             print('len fddata (linear coeffs): ', len(fddata))
             for b in range(self.number_of_bands):
                 Ks, Ke = self.Ks_Ke[b]
@@ -585,12 +580,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
                     start_idx_in_band + len(window_sequence) - 1,
                     len(ifo.power_spectral_density_array) - 1
                 )
-                threshold_frequency = 16 # 21
-                args = np.argwhere((
-                    ifo.strain_data.frequency_array >= ifo.minimum_frequency) & 
-                    (ifo.strain_data.frequency_array <= threshold_frequency)).flatten()
-                cut_frequency = ifo.strain_data.frequency_array[args]
-                _frequency_mask = cut_frequency[start_idx_in_band:end_idx_in_band + 1]
+                _frequency_mask = ifo.frequency_mask[start_idx_in_band:end_idx_in_band + 1]
                 window_over_psd = np.zeros(end_idx_in_band + 1 - start_idx_in_band)
                 window_over_psd[_frequency_mask] = \
                     1. / ifo.power_spectral_density_array[start_idx_in_band:end_idx_in_band + 1][_frequency_mask]
@@ -637,13 +627,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         for ifo in self.interferometers:
             logger.info("Pre-computing quadratic coefficients for {}".format(ifo.name))
             full_inv_psds = np.zeros(N // 2 + 1)
-            threshold_frequency = 16 # 21
-            args = np.argwhere((
-                ifo.strain_data.frequency_array >= ifo.minimum_frequency) & 
-                (ifo.strain_data.frequency_array <= threshold_frequency)).flatten()
-            cut_frequency = ifo.strain_data.frequency_array[args]
-            full_inv_psds[:len(ifo.power_spectral_density_array)][cut_frequency[:len(full_inv_psds)]] = (
-                1 / ifo.power_spectral_density_array[cut_frequency]
+            full_inv_psds[:len(ifo.power_spectral_density_array)][ifo.frequency_mask[:len(full_inv_psds)]] = (
+                1 / ifo.power_spectral_density_array[ifo.frequency_mask]
             )
             for b in range(self.number_of_bands):
                 Imb = np.fft.irfft(full_inv_psds[:self.Nbs[b] // 2 + 1])

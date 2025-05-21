@@ -318,6 +318,8 @@ class Interferometer(object):
             self.strain_data.frequency_array >= self.strain_data.minimum_frequency) & 
             (self.strain_data.frequency_array <= threshold_frequency)).flatten()
         cut_frequency = self.strain_data.frequency_array[args]
+        print('cut_frequency: ', cut_frequency)
+        print('len(cut_frequency): ', len(cut_frequency))
 
         args_below_fmin = np.where(
             self.strain_data.frequency_array < self.strain_data.minimum_frequency)[0]
@@ -369,7 +371,7 @@ class Interferometer(object):
             waveform_polarizations['cross'] * final_antenna_response_cross
 
         signal_ifo *= self.strain_data.frequency_mask
-        print('len signal_ifo from freq mask: ', signal_ifo)
+        print('len signal_ifo from freq mask: ', len(signal_ifo))
 
         time_shift = self.time_delay_from_geocenter(
             parameters['ra'], parameters['dec'], parameters['geocent_time'])
