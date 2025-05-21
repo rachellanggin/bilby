@@ -769,8 +769,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         print('antenna response: ', response_plus, response_cross)
 
-        strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus  
-        strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
+        strain += waveform_polarizations['plus'][self.waveform_generator.waveform_arguments['frequencies']] * response_plus  
+        strain += waveform_polarizations['cross'][self.waveform_generator.waveform_arguments['frequencies']] * response_cross
         print("strain after antenna response: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
