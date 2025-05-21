@@ -758,23 +758,23 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex) 
 
-        response_plus = {'plus': np.zeros(len(self.banded_frequency_points))}
-        response_cross = {'cross': np.zeros(len(self.banded_frequency_points))}
-        print('banded_frequency_points: ', len(self.banded_frequency_points))
-
-        threshold_frequency = 16 # 21
-        args = np.argwhere((
-            interferometer.strain_data.frequency_array >= interferometer.strain_data.minimum_frequency) & 
-            (interferometer.strain_data.frequency_array <= threshold_frequency)).flatten()
-        cut_frequency = interferometer.strain_data.frequency_array[args]
-        print(cut_frequency)
+        # threshold_frequency = 16 # 21
+        # args = np.argwhere((
+        #     interferometer.strain_data.frequency_array >= interferometer.strain_data.minimum_frequency) & 
+        #     (interferometer.strain_data.frequency_array <= threshold_frequency)).flatten()
+        # cut_frequency = interferometer.strain_data.frequency_array[args]
         
-        response_plus, response_cross = interferometer.antenna_response(
-            self.parameters['ra'], self.parameters['dec'],
-            time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
-            cut_frequency)
+        response_plus = waveform_polarizations[0]
+        response_cross = waveform_polarizations[1]
 
-        print('antenna response: ', len(response_plus), len(response_cross))
+        # this calls the antenna_response function again when the input variable waveform_polarizations 
+        # already contains the plus and cross that we want
+        # response_plus, response_cross = interferometer.antenna_response(
+        #     self.parameters['ra'], self.parameters['dec'],
+        #     time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
+        #     cut_frequency)
+
+        # print('antenna response: ', len(response_plus), len(response_cross))
 
         # Remap response to full banded frequency grid
         response_plus = response_plus[self.unique_to_original_frequencies]
