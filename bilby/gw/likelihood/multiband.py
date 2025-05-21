@@ -761,11 +761,18 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         response_plus = {'plus': np.zeros(len(self.banded_frequency_points))}
         response_cross = {'cross': np.zeros(len(self.banded_frequency_points))}
         print('banded_frequency_points: ', len(self.banded_frequency_points))
+
+        threshold_frequency = 16 # 21
+        args = np.argwhere((
+            interferometer.strain_data.frequency_array >= interferometer.strain_data.minimum_frequency) & 
+            (interferometer.strain_data.frequency_array <= threshold_frequency)).flatten()
+        cut_frequency = interferometer.strain_data.frequency_array[args]
+        print(cut_frequency)
         
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
-            ifo.cut_frequency)
+            cut_frequency)
 
         print('antenna response: ', len(response_plus), len(response_cross))
 
