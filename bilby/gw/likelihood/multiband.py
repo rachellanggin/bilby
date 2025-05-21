@@ -760,7 +760,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         response_plus = {'plus': np.zeros(len(self.banded_frequency_points))}
         response_cross = {'cross': np.zeros(len(self.banded_frequency_points))}
-        print('banded_frequency_points: ', self.banded_frequency_points)
+        print('banded_frequency_points: ', len(self.banded_frequency_points))
         
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
