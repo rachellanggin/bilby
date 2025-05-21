@@ -764,8 +764,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
-            self.parameters['geocent_time'], self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
-            interferometer.frequency_mask)
+            get_whitened_time_series_from_whitened_frequency_series, self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
+            self.waveform_generator.waveform_arguments['frequencies'])
 
         print('antenna response: ', response_plus, response_cross)
 
