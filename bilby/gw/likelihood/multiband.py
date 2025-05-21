@@ -765,7 +765,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
-            self.waveform_generator.waveform_arguments['frequencies'])
+            ifo.cut_frequency)
 
         print('antenna response: ', len(response_plus), len(response_cross))
 
@@ -774,8 +774,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         response_cross = response_cross[self.unique_to_original_frequencies]
         print('antenna response remapped back to full freq grid: ', len(response_plus), len(response_cross))
 
-        strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus  
-        strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
+        strain += response_plus[self.unique_to_original_frequencies] * response_plus  
+        strain += response_cross[self.unique_to_original_frequencies] * response_cross
         print("strain after antenna response: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
