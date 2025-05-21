@@ -346,7 +346,7 @@ class Interferometer(object):
             parameters['geocent_time'],
             parameters['psi'],
             chirp_mass,
-            self.strain_data.frequency_mask)
+            cut_frequency)
 
         # we don't care about fill_array_below, but we keep it 
         # because of the frequency length
