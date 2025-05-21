@@ -369,6 +369,7 @@ class Interferometer(object):
             waveform_polarizations['cross'] * final_antenna_response_cross
 
         signal_ifo *= self.strain_data.frequency_mask
+        print('len signal_ifo from freq mask: ', signal_ifo)
 
         time_shift = self.time_delay_from_geocenter(
             parameters['ra'], parameters['dec'], parameters['geocent_time'])

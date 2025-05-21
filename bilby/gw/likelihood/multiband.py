@@ -539,6 +539,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             fddata = np.zeros(N // 2 + 1, dtype=complex)
             fddata[:len(ifo.frequency_domain_strain)][ifo.frequency_mask[:len(fddata)]] += \
                 ifo.frequency_domain_strain[ifo.frequency_mask] / ifo.power_spectral_density_array[ifo.frequency_mask]
+            print('len ffdata (linear coeffs): ', len(ffdata))
             for b in range(self.number_of_bands):
                 Ks, Ke = self.Ks_Ke[b]
                 windows = self._get_window_sequence(1. / self.durations[b], Ks, Ke - Ks + 1, b)
@@ -764,11 +765,13 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             self.parameters['geocent_time'], self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
-            self.unique_to_original_frequencies)
+            interferometer.frequency_mask)
+
+        print('antenna response: ', response_plus, response_cross)
 
         strain += waveform_polarizations['plus'][self.unique_to_original_frequencies] * response_plus  
         strain += waveform_polarizations['cross'][self.unique_to_original_frequencies] * response_cross
-        print("strain before: ", strain)
+        print("strain after antenna response: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
