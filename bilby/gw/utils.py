@@ -94,7 +94,7 @@ def get_polarization_tensor(ra, dec, geocent_time, psi, chirp_mass, cut_frequenc
     '''
     
     new_geocent_time = earth_motion_time_delay(
-        geocent_time, chirp_mass, interferometer.frequency_mask)
+        geocent_time, chirp_mass, cut_frequency)
 
     gmst = np.fmod(np.array([
         lal.GreenwichMeanSiderealTime(tt) for tt in new_geocent_time]),
