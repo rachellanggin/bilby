@@ -539,7 +539,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             fddata = np.zeros(N // 2 + 1, dtype=complex)
             fddata[:len(ifo.frequency_domain_strain)][ifo.frequency_mask[:len(fddata)]] += \
                 ifo.frequency_domain_strain[ifo.frequency_mask] / ifo.power_spectral_density_array[ifo.frequency_mask]
-            print('len ffdata (linear coeffs): ', len(ffdata))
+            print('len fddata (linear coeffs): ', len(fddata))
             for b in range(self.number_of_bands):
                 Ks, Ke = self.Ks_Ke[b]
                 windows = self._get_window_sequence(1. / self.durations[b], Ks, Ke - Ks + 1, b)
