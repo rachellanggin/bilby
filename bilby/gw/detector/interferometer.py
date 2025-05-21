@@ -313,7 +313,7 @@ class Interferometer(object):
         """
         # args, args_below_fmin and args_above_threshold_frequency 
         # can probably be pre-computed before, but I'm getting weird errors when I do so
-        threshold_frequency = 21
+        threshold_frequency = 16 # 21
         args = np.argwhere((
             self.strain_data.frequency_array >= self.strain_data.minimum_frequency) & 
             (self.strain_data.frequency_array <= threshold_frequency)).flatten()
@@ -346,7 +346,7 @@ class Interferometer(object):
             parameters['geocent_time'],
             parameters['psi'],
             chirp_mass,
-            cut_frequency)
+            self.strain_data.frequency_mask)
 
         # we don't care about fill_array_below, but we keep it 
         # because of the frequency length
