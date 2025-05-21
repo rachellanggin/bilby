@@ -758,31 +758,34 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex) 
 
-        # threshold_frequency = 16 # 21
-        # args = np.argwhere((
-        #     interferometer.strain_data.frequency_array >= interferometer.strain_data.minimum_frequency) & 
-        #     (interferometer.strain_data.frequency_array <= threshold_frequency)).flatten()
-        # cut_frequency = interferometer.strain_data.frequency_array[args]
+        threshold_frequency = 16 # 21
+        args = np.argwhere((
+            interferometer.strain_data.frequency_array >= interferometer.strain_data.minimum_frequency) & 
+            (interferometer.strain_data.frequency_array <= threshold_frequency)).flatten()
+        cut_frequency = interferometer.strain_data.frequency_array[args]
         
-        response_plus = waveform_polarizations[0]
-        response_cross = waveform_polarizations[1]
+        plus = waveform_polarizations['plus']
+        cross = waveform_polarizations['cross']
 
-        # this calls the antenna_response function again when the input variable waveform_polarizations 
-        # already contains the plus and cross that we want
-        # response_plus, response_cross = interferometer.antenna_response(
-        #     self.parameters['ra'], self.parameters['dec'],
-        #     time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
-        #     cut_frequency)
+        # Apply mapping to banded grid
+        plus = plus[self.unique_to_original_frequencies]
+        cross = cross[self.unique_to_original_frequencies]
+        print('len plus and cross: ', len(plus), len(cross))
 
-        # print('antenna response: ', len(response_plus), len(response_cross))
+        response_plus, response_cross = interferometer.antenna_response(
+            self.parameters['ra'], self.parameters['dec'],
+            time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
+            cut_frequency)
+
+        print('len antenna response: ', len(response_plus), len(response_cross))
 
         # Remap response to full banded frequency grid
         response_plus = response_plus[self.unique_to_original_frequencies]
         response_cross = response_cross[self.unique_to_original_frequencies]
         print('antenna response remapped back to full freq grid: ', len(response_plus), len(response_cross))
 
-        strain += response_plus[self.unique_to_original_frequencies] * response_plus  
-        strain += response_cross[self.unique_to_original_frequencies] * response_cross
+        strain += plus * response_plus  
+        strain += cross * response_cross
         print("strain after antenna response: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
