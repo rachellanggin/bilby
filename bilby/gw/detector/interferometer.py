@@ -318,8 +318,8 @@ class Interferometer(object):
             self.strain_data.frequency_array >= self.strain_data.minimum_frequency) & 
             (self.strain_data.frequency_array <= threshold_frequency)).flatten()
         cut_frequency = self.strain_data.frequency_array[args]
-        print('cut_frequency: ', cut_frequency)
-        print('len(cut_frequency): ', len(cut_frequency))
+        # print('cut_frequency: ', cut_frequency)
+        # print('len(cut_frequency): ', len(cut_frequency))
 
         args_below_fmin = np.where(
             self.strain_data.frequency_array < self.strain_data.minimum_frequency)[0]
@@ -371,18 +371,18 @@ class Interferometer(object):
             waveform_polarizations['cross'] * final_antenna_response_cross
 
         signal_ifo *= self.strain_data.frequency_mask
-        print('len signal_ifo from freq mask: ', len(signal_ifo))
+        # print('len signal_ifo from freq mask: ', len(signal_ifo))
 
         time_shift = self.time_delay_from_geocenter(
             parameters['ra'], parameters['dec'], parameters['geocent_time'])
-        print('time_shift in det resp: ', time_shift)
+        # print('time_shift in det resp: ', time_shift)
 
         # Be careful to first subtract the two GPS times which are ~1e9 sec.
         # And then add the time_shift which varies at ~1e-5 sec
         dt_geocent = parameters['geocent_time'] - self.strain_data.start_time
-        print('dt_geocent: ', dt_geocent)
+        # print('dt_geocent: ', dt_geocent)
         dt = dt_geocent + time_shift
-        print('dt: ', dt)
+        # print('dt: ', dt)
 
         signal_ifo[self.strain_data.frequency_mask] = signal_ifo[self.strain_data.frequency_mask] * np.exp(
             -1j * 2 * np.pi * dt * self.strain_data.frequency_array[self.strain_data.frequency_mask])

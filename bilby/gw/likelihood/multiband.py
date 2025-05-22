@@ -539,7 +539,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             fddata = np.zeros(N // 2 + 1, dtype=complex)
             fddata[:len(ifo.frequency_domain_strain)][ifo.frequency_mask[:len(fddata)]] += \
                 ifo.frequency_domain_strain[ifo.frequency_mask] / ifo.power_spectral_density_array[ifo.frequency_mask]
-            print('len fddata (linear coeffs): ', len(fddata))
+            # print('len fddata (linear coeffs): ', len(fddata))
             for b in range(self.number_of_bands):
                 Ks, Ke = self.Ks_Ke[b]
                 windows = self._get_window_sequence(1. / self.durations[b], Ks, Ke - Ks + 1, b)
@@ -770,46 +770,46 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # Apply mapping to banded grid
         plus = plus[self.unique_to_original_frequencies]
         cross = cross[self.unique_to_original_frequencies]
-        print('len plus and cross: ', len(plus), len(cross))
+        # print('len plus and cross: ', len(plus), len(cross))
 
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
-            time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # should time_ref instead be geocent_time
+            time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # time_ref is geocent_time
             cut_frequency)
 
-        print('len antenna response: ', len(response_plus), len(response_cross))
+        # print('len antenna response: ', len(response_plus), len(response_cross))
 
         # Remap response to full banded frequency grid
         response_plus = response_plus[self.unique_to_original_frequencies]
         response_cross = response_cross[self.unique_to_original_frequencies]
-        print('antenna response remapped back to full freq grid: ', len(response_plus), len(response_cross))
+        # print('antenna response remapped back to full freq grid: ', len(response_plus), len(response_cross))
 
         strain += plus * response_plus  
         strain += cross * response_cross
-        print("strain after antenna response: ", strain)
+        # print("strain after antenna response: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
             time_ref)
-        print('dt: ', dt)
+        # print('dt: ', dt)
         dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
-        print('dt_geocent: ', dt_geocent)
+        # print('dt_geocent: ', dt_geocent)
         ifo_time = dt_geocent + dt
-        print('ifo_time: ', ifo_time)
+        # print('ifo_time: ', ifo_time)
 
         calib_factor = interferometer.calibration_model.get_calibration_factor(
             self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
         strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
         strain *= calib_factor
-        print("strain after: ", strain)
+        # print("strain after: ", strain)
         d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name]))
-        print("d_inner_h: ", d_inner_h)
+        # print("d_inner_h: ", d_inner_h)
         if self.linear_interpolation:
             optimal_snr_squared = np.vdot(
                 np.real(strain * np.conjugate(strain)),
                 self.quadratic_coeffs[interferometer.name]
             )
-            print('optimal_snr_squared after linear_interpolatio:', optimal_snr_squared)
+            # print('optimal_snr_squared after linear_interpolatio:', optimal_snr_squared)
         else:
             optimal_snr_squared = 0.
             for b in range(self.number_of_bands):
@@ -831,7 +831,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
                         np.real(thbc * np.conjugate(thbc)), self.Ibcs[interferometer.name][b])
 
         complex_matched_filter_snr = d_inner_h / (optimal_snr_squared**0.5)
-        print('complex_matched_filter_snr: ', complex_matched_filter_snr)
+        # print('complex_matched_filter_snr: ', complex_matched_filter_snr)
 
         if return_array and self.time_marginalization:
             self._full_d_h[self._full_to_multiband] *= 0
