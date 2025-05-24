@@ -74,8 +74,7 @@ class WaveformGenerator(object):
         start_time = self.waveform_arguments.get("start_time", start_time)
         self._times_and_frequencies = CoupledTimeAndFrequencySeries(duration=duration,
                                                             sampling_frequency=sampling_frequency,
-                                                            start_time=start_time,
-                                                            frequency_array=frequency_array)
+                                                            start_time=start_time)
         if isinstance(parameters, dict):
             self.parameters = parameters
         self._cache = dict(parameters=None, waveform=None, model=None)
