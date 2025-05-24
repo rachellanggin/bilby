@@ -292,7 +292,7 @@ class Interferometer(object):
         # return np.einsum('ij,ij->', self.geometry.detector_tensor, polarization_tensor)
         return antenna_response_plus, antenna_response_cross
 
-    def get_detector_response(self, waveform_polarizations, parameters, frequencies=None, raise_error=True):
+    def get_detector_response(self, waveform_polarizations, parameters, raise_error=True):
         """ Get the detector response for a particular waveform
 
         Parameters
@@ -311,85 +311,41 @@ class Interferometer(object):
         =======
         array_like: A 3x3 array representation of the detector response (signal observed in the interferometer)
         """
-        # args, args_below_fmin and args_above_threshold_frequency 
-        # can probably be pre-computed before, but I'm getting weird errors when I do so
-        threshold_frequency = 16 # 21
-        args = np.argwhere((
-            self.strain_data.frequency_array >= self.strain_data.minimum_frequency) & 
-            (self.strain_data.frequency_array <= threshold_frequency)).flatten()
-        cut_frequency = self.strain_data.frequency_array[args]
-        # print('cut_frequency: ', cut_frequency)
-        # print('len(cut_frequency): ', len(cut_frequency))
+        threshold_frequency=16.
+        full_freqs = self.strain_data.frequency_array
 
-        # args_below_fmin = np.where(
-        #     self.strain_data.frequency_array < self.strain_data.minimum_frequency)[0]
-        # args_above_threshold_frequency = np.where(
-        #     self.strain_data.frequency_array > threshold_frequency)[0]
+        # Band to use (below threshold)
+        mask = (full_freqs >= self.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
+        cut_freqs = full_freqs[mask]
 
-        # try:
-        #     parameters = generate_all_bbh_parameters(parameters)
-        # except AttributeError:
-        #     logger.debug(
-        #         "generate_all_bbh_parameters parameters failed during get_detector_response"
-        #     )
-        #     return
-
-        # if ("mass_1" not in parameters) and ("mass_2" not in parameters):
-        #     if raise_error:
-        #         raise AttributeError("Unable to check signal duration as mass not given")
-        #     else:
-        #         return
-        # parameters from relative.py are not compatible with the parameters from relative.py 
         chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
 
         det_response_plus, det_response_cross = self.antenna_response(
-            parameters['ra'],
-            parameters['dec'],
-            parameters['geocent_time'],
-            parameters['psi'],
-            chirp_mass,
-            cut_frequency)
+            parameters['ra'], parameters['dec'], parameters['geocent_time'], parameters['psi'],
+            chirp_mass, cut_freqs)
 
-        # we don't care about fill_array_below, but we keep it 
-        # because of the frequency length
+        # Truncate waveform_polarizations
+        wp_plus = waveform_polarizations['plus'][mask]
+        wp_cross = waveform_polarizations['cross'][mask]
 
-        # fill_array_below = np.ones(len(args_below_fmin)) * det_response_plus[0] 
-        # fill_array_above = np.ones(len(args_above_threshold_frequency)) * det_response_plus[-1]    
-        # final_antenna_response_plus = np.append(
-        #     np.append(fill_array_below, det_response_plus),
-        #     fill_array_above
-        #     )
+        signal_cut = wp_plus * det_response_plus + wp_cross * det_response_cross
 
-        # fill_array_below = np.ones(len(args_below_fmin)) * det_response_cross[0] 
-        # fill_array_above = np.ones(len(args_above_threshold_frequency)) * det_response_cross[-1]    
-        # final_antenna_response_cross = np.append(
-        #     np.append(fill_array_below, det_response_cross),
-        #     fill_array_above
-        #     )
-        
-        signal_ifo = waveform_polarizations['plus'] * det_response_plus + \
-            waveform_polarizations['cross'] * det_response_cross
+        # Insert into full array
+        signal_ifo = np.zeros_like(full_freqs, dtype=complex)
+        signal_ifo[mask] = signal_cut
 
-        # signal_ifo *= self.strain_data.frequency_mask
-        # print('len signal_ifo from freq mask: ', len(signal_ifo))
-
+        # Apply time delay
         time_shift = self.time_delay_from_geocenter(
             parameters['ra'], parameters['dec'], parameters['geocent_time'])
-        # print('time_shift in det resp: ', time_shift)
 
-        # Be careful to first subtract the two GPS times which are ~1e9 sec.
-        # And then add the time_shift which varies at ~1e-5 sec
         dt_geocent = parameters['geocent_time'] - self.strain_data.start_time
-        # print('dt_geocent: ', dt_geocent)
         dt = dt_geocent + time_shift
-        # print('dt: ', dt)
 
-        signal_ifo = signal_ifo * np.exp(
-            -1j * 2 * np.pi * dt * cut_frequency)
+        signal_ifo *= np.exp(-1j * 2 * np.pi * dt * full_freqs)
 
+        # Apply calibration
         signal_ifo *= self.calibration_model.get_calibration_factor(
-            cut_frequency,
-            prefix='recalib_{}_'.format(self.name), **parameters)
+            full_freqs, prefix=f'recalib_{self.name}_', **parameters)
 
         return signal_ifo
 

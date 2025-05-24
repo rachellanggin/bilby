@@ -758,31 +758,21 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex) 
 
-        threshold_frequency = 16 # 21
-        args = np.argwhere((
-            interferometer.strain_data.frequency_array >= interferometer.strain_data.minimum_frequency) & 
-            (interferometer.strain_data.frequency_array <= threshold_frequency)).flatten()
-        cut_frequency = interferometer.strain_data.frequency_array[args]
-        
-        plus = waveform_polarizations['plus']
-        cross = waveform_polarizations['cross']
+        threshold_frequency=16.
+        full_freqs = interferometer.strain_data.frequency_array
 
-        # Apply mapping to banded grid
-        plus = plus[self.unique_to_original_frequencies]
-        cross = cross[self.unique_to_original_frequencies]
-        # print('len plus and cross: ', len(plus), len(cross))
+        # Band to use (below threshold)
+        mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
+        cut_freqs = full_freqs[mask]
+        
+        plus = waveform_polarizations['plus'][mask]
+        cross = waveform_polarizations['cross'][mask]
 
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # time_ref is geocent_time
-            cut_frequency)
-
+            cut_freqs)
         # print('len antenna response: ', len(response_plus), len(response_cross))
-
-        # Remap response to full banded frequency grid
-        response_plus = response_plus[self.unique_to_original_frequencies]
-        response_cross = response_cross[self.unique_to_original_frequencies]
-        # print('antenna response remapped back to full freq grid: ', len(response_plus), len(response_cross))
 
         strain += plus * response_plus  
         strain += cross * response_cross
