@@ -321,10 +321,10 @@ class Interferometer(object):
         # print('cut_frequency: ', cut_frequency)
         # print('len(cut_frequency): ', len(cut_frequency))
 
-        args_below_fmin = np.where(
-            self.strain_data.frequency_array < self.strain_data.minimum_frequency)[0]
-        args_above_threshold_frequency = np.where(
-            self.strain_data.frequency_array > threshold_frequency)[0]
+        # args_below_fmin = np.where(
+        #     self.strain_data.frequency_array < self.strain_data.minimum_frequency)[0]
+        # args_above_threshold_frequency = np.where(
+        #     self.strain_data.frequency_array > threshold_frequency)[0]
 
         # try:
         #     parameters = generate_all_bbh_parameters(parameters)
@@ -353,24 +353,24 @@ class Interferometer(object):
         # we don't care about fill_array_below, but we keep it 
         # because of the frequency length
 
-        fill_array_below = np.ones(len(args_below_fmin)) * det_response_plus[0] 
-        fill_array_above = np.ones(len(args_above_threshold_frequency)) * det_response_plus[-1]    
-        final_antenna_response_plus = np.append(
-            np.append(fill_array_below, det_response_plus),
-            fill_array_above
-            )
+        # fill_array_below = np.ones(len(args_below_fmin)) * det_response_plus[0] 
+        # fill_array_above = np.ones(len(args_above_threshold_frequency)) * det_response_plus[-1]    
+        # final_antenna_response_plus = np.append(
+        #     np.append(fill_array_below, det_response_plus),
+        #     fill_array_above
+        #     )
 
-        fill_array_below = np.ones(len(args_below_fmin)) * det_response_cross[0] 
-        fill_array_above = np.ones(len(args_above_threshold_frequency)) * det_response_cross[-1]    
-        final_antenna_response_cross = np.append(
-            np.append(fill_array_below, det_response_cross),
-            fill_array_above
-            )
+        # fill_array_below = np.ones(len(args_below_fmin)) * det_response_cross[0] 
+        # fill_array_above = np.ones(len(args_above_threshold_frequency)) * det_response_cross[-1]    
+        # final_antenna_response_cross = np.append(
+        #     np.append(fill_array_below, det_response_cross),
+        #     fill_array_above
+        #     )
         
-        signal_ifo = waveform_polarizations['plus'] * final_antenna_response_plus + \
-            waveform_polarizations['cross'] * final_antenna_response_cross
+        signal_ifo = waveform_polarizations['plus'] * det_response_plus + \
+            waveform_polarizations['cross'] * det_response_cross
 
-        signal_ifo *= self.strain_data.frequency_mask
+        # signal_ifo *= self.strain_data.frequency_mask
         # print('len signal_ifo from freq mask: ', len(signal_ifo))
 
         time_shift = self.time_delay_from_geocenter(
@@ -384,11 +384,11 @@ class Interferometer(object):
         dt = dt_geocent + time_shift
         # print('dt: ', dt)
 
-        signal_ifo[self.strain_data.frequency_mask] = signal_ifo[self.strain_data.frequency_mask] * np.exp(
-            -1j * 2 * np.pi * dt * self.strain_data.frequency_array[self.strain_data.frequency_mask])
+        signal_ifo = signal_ifo * np.exp(
+            -1j * 2 * np.pi * dt * cut_frequency)
 
-        signal_ifo[self.strain_data.frequency_mask] *= self.calibration_model.get_calibration_factor(
-            self.strain_data.frequency_array[self.strain_data.frequency_mask],
+        signal_ifo *= self.calibration_model.get_calibration_factor(
+            cut_frequency,
             prefix='recalib_{}_'.format(self.name), **parameters)
 
         return signal_ifo
