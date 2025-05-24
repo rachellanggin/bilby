@@ -758,29 +758,34 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex) 
 
-        threshold_frequency=16.
+        threshold_frequency = 16. # 21
+        # Step 1: Get banded frequency grid
         full_freqs = interferometer.strain_data.frequency_array
+        banded_freqs = full_freqs[self.unique_to_original_frequencies]  # shape: (14046,)
 
-        # Band to use (below threshold)
-        mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
-        cut_freqs = full_freqs[mask]
-        
-        # Apply frequency mapping first
-        plus_full = waveform_polarizations['plus'][self.unique_to_original_frequencies]
-        cross_full = waveform_polarizations['cross'][self.unique_to_original_frequencies]
+        # Step 2: Mask in the *banded* frequency space
+        threshold_frequency = 16.
+        mask_banded = (banded_freqs >= interferometer.strain_data.minimum_frequency) & (
+                    banded_freqs <= threshold_frequency)
+        cut_freqs = banded_freqs[mask_banded]  # shape: e.g., (~7000,)
 
-        # Then apply band mask
-        plus = plus_full[mask]
-        cross = cross_full[mask]
+        # Step 3: Apply mapping *first*, then mask
+        plus_banded = waveform_polarizations['plus'][self.unique_to_original_frequencies]  # shape: (14046,)
+        cross_banded = waveform_polarizations['cross'][self.unique_to_original_frequencies]
 
+        plus = plus_banded[mask_banded]    # shape: (~7000,)
+        cross = cross_banded[mask_banded]
+
+        # Step 4: Apply antenna response
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
-            time_ref, self.parameters['psi'], self.parameters['chirp_mass'],  # time_ref is geocent_time
+            time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
-        # print('len antenna response: ', len(response_plus), len(response_cross))
 
-        strain += plus * response_plus  
-        strain += cross * response_cross
+        # Step 5: Add contribution to strain array
+        # Only modify the masked part of strain
+        strain[mask_banded] += plus * response_plus
+        strain[mask_banded] += cross * response_cross
         # print("strain after antenna response: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
