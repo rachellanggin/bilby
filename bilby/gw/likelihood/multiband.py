@@ -759,33 +759,27 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex) 
 
         threshold_frequency = 16. # 21
-        # Step 1: Get banded frequency grid
         full_freqs = interferometer.strain_data.frequency_array
-        banded_freqs = full_freqs[self.unique_to_original_frequencies]  # shape: (14046,)
 
-        # Step 2: Mask in the *banded* frequency space
-        threshold_frequency = 16.
-        mask_banded = (banded_freqs >= interferometer.strain_data.minimum_frequency) & (
-                    banded_freqs <= threshold_frequency)
-        cut_freqs = banded_freqs[mask_banded]  # shape: e.g., (~7000,)
+        mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
+        cut_freqs = full_freqs[mask]
 
-        # Step 3: Apply mapping *first*, then mask
-        plus_banded = waveform_polarizations['plus'][self.unique_to_original_frequencies]  # shape: (14046,)
-        cross_banded = waveform_polarizations['cross'][self.unique_to_original_frequencies]
+        plus = waveform_polarizations['plus']
+        cross = waveform_polarizations['cross']
 
-        plus = plus_banded[mask_banded]    # shape: (~7000,)
-        cross = cross_banded[mask_banded]
+        plus = plus[self.unique_to_original_frequencies]
+        cross = cross[self.unique_to_original_frequencies]
 
-        # Step 4: Apply antenna response
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
 
-        # Step 5: Add contribution to strain array
-        # Only modify the masked part of strain
-        strain[mask_banded] += plus * response_plus
-        strain[mask_banded] += cross * response_cross
+        response_plus = response_plus[self.unique_to_original_frequencies]
+        response_cross = response_cross[self.unique_to_original_frequencies]
+
+        strain += plus * response_plus
+        strain += cross * response_cross
         # print("strain after antenna response: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
