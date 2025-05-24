@@ -20,7 +20,8 @@ class WaveformGenerator(object):
     frequency_array = PropertyAccessor('_times_and_frequencies', 'frequency_array')
     time_array = PropertyAccessor('_times_and_frequencies', 'time_array')
 
-    def __init__(self, duration=None, sampling_frequency=None, start_time=0, frequency_domain_source_model=None,
+    def __init__(self, duration=None, sampling_frequency=None, start_time=0, 
+                 frequency_array=None, frequency_domain_source_model=None,
                  time_domain_source_model=None, parameters=None,
                  parameter_conversion=None,
                  waveform_arguments=None):
@@ -58,9 +59,6 @@ class WaveformGenerator(object):
             the WaveformGenerator object and initialised to `None`.
 
         """
-        self._times_and_frequencies = CoupledTimeAndFrequencySeries(duration=duration,
-                                                                    sampling_frequency=sampling_frequency,
-                                                                    start_time=start_time)
         self.frequency_domain_source_model = frequency_domain_source_model
         self.time_domain_source_model = time_domain_source_model
         self.source_parameter_keys = self.__parameters_from_source_model()
@@ -72,6 +70,12 @@ class WaveformGenerator(object):
             self.waveform_arguments = waveform_arguments
         else:
             self.waveform_arguments = dict()
+        # If waveform_arguments specifies start_time, override it
+        start_time = self.waveform_arguments.get("start_time", start_time)
+        self._times_and_frequencies = CoupledTimeAndFrequencySeries(duration=duration,
+                                                            sampling_frequency=sampling_frequency,
+                                                            start_time=start_time,
+                                                            frequency_array=frequency_array)
         if isinstance(parameters, dict):
             self.parameters = parameters
         self._cache = dict(parameters=None, waveform=None, model=None)
