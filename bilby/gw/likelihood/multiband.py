@@ -775,8 +775,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
 
-        response_plus = response_plus[self.unique_to_original_frequencies]
-        response_cross = response_cross[self.unique_to_original_frequencies]
+        # response_plus = response_plus[self.unique_to_original_frequencies]
+        # response_cross = response_cross[self.unique_to_original_frequencies]
 
         strain += plus * response_plus
         strain += cross * response_cross
