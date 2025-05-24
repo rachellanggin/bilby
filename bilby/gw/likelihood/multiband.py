@@ -765,8 +765,13 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
         cut_freqs = full_freqs[mask]
         
-        plus = waveform_polarizations['plus'][mask][self.unique_to_original_frequencies]
-        cross = waveform_polarizations['cross'][mask][self.unique_to_original_frequencies]
+        # Apply frequency mapping first
+        plus_full = waveform_polarizations['plus'][self.unique_to_original_frequencies]
+        cross_full = waveform_polarizations['cross'][self.unique_to_original_frequencies]
+
+        # Then apply band mask
+        plus = plus_full[mask]
+        cross = cross_full[mask]
 
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
