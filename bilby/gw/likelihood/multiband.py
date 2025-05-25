@@ -765,6 +765,9 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         mask = (full_wf_freqs >= interferometer.strain_data.minimum_frequency) & (full_wf_freqs <= threshold_frequency)
         cut_freqs = full_wf_freqs[mask]
 
+        plus = waveform_polarizations['plus']
+        cross = waveform_polarizations['cross']
+
         print("Before interpolation:")
         print(f"  plus shape: {plus.shape}")
         print(f"  cross shape: {cross.shape}")
