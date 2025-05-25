@@ -757,11 +757,10 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref = self.parameters['geocent_time']
 
         threshold_frequency = 16. # 21
-        full_freqs = interferometer.strain_data.frequency_array
+        full_freqs = self.waveform_generator.frequency_array
 
-        mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
+        mask = (full_freqs >= self.waveform_generator.minimum_frequency) & (full_freqs <= threshold_frequency)
         cut_freqs = full_freqs[mask]
-        print('self.banded_frequency_points: ', len(self.banded_frequency_points))
 
         strain = np.zeros(len(cut_freqs), dtype=complex) 
         print('strain: ', len(strain))
