@@ -756,14 +756,16 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         else:
             time_ref = self.parameters['geocent_time']
 
-        threshold_frequency = 16. # 21
+        #threshold_frequency = 16. # 21
 
         plus = waveform_polarizations['plus']
         cross = waveform_polarizations['cross']
 
         # Create a matching frequency array
         frequencies = self.banded_frequency_points
-        min_freq = self.waveform_generator.waveform_arguments["minimum_frequency"]
+        min_freq = 7.0
+        max_freq = 16.0
+        print(interferometer.strain_data.minimum_chirp_mass)
         mask = (frequencies >= min_freq) & (frequencies <= threshold_frequency)
         cut_freqs = frequencies[mask]
 
