@@ -757,12 +757,13 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref = self.parameters['geocent_time']
 
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex) 
+        print('self.banded_frequency_points: ', len(self.banded_frequency_points))
 
         threshold_frequency = 16. # 21
         full_freqs = interferometer.strain_data.frequency_array
 
-        # mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
-        # cut_freqs = full_freqs[mask]
+        mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
+        cut_freqs = full_freqs[mask]
         
         # print(f"full_freqs.shape: {full_freqs.shape}")
         # print(f"waveform_polarizations['plus'].shape: {waveform_polarizations['plus'].shape}")
@@ -778,7 +779,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
-            full_freqs)
+            cut_freqs)
         
         print(f"response_plus shape: {response_plus.shape}")
 
