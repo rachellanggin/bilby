@@ -762,8 +762,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         threshold_frequency = 16. # 21
         full_wf_freqs = interferometer.strain_data.frequency_array
         # Band to use (below threshold)
-        mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
-        cut_freqs = full_freqs[mask]
+        mask = (full_wf_freqs >= interferometer.strain_data.minimum_frequency) & (full_wf_freqs <= threshold_frequency)
+        cut_freqs = full_wf_freqs[mask]
 
         print("Before interpolation:")
         print(f"  plus shape: {plus.shape}")
