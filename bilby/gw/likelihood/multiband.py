@@ -757,21 +757,25 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref = self.parameters['geocent_time']
 
         threshold_frequency = 16. # 21
-        
-        full_freqs = self.waveform_generator.frequency_array
+
+        plus = waveform_polarizations['plus']
+        cross = waveform_polarizations['cross']
+
+        # Create a matching frequency array
+        frequencies = np.linspace(
+            self.waveform_generator.waveform_arguments["minimum_frequency"],
+            self.waveform_generator.waveform_arguments["maximum_frequency"],
+            len(plus)
+        )
         min_freq = self.waveform_generator.waveform_arguments["minimum_frequency"]
-        mask = (full_freqs >= min_freq) & (full_freqs <= threshold_frequency)
-        cut_freqs = full_freqs[mask]
+        mask = (frequencies >= min_freq) & (frequencies <= threshold_frequency)
+        cut_freqs = frequencies[mask]
+
+        plus = plus[mask]
+        cross = cross[mask]
 
         strain = np.zeros(len(cut_freqs), dtype=complex) 
         print('strain: ', len(strain))
-
-        plus = waveform_polarizations['plus']
-        plus = plus[mask]
-        cross = waveform_polarizations['cross']
-        cross = cross[mask]
-
-        print(f"plus shape: {plus.shape}")
 
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
