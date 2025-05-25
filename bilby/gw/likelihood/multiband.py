@@ -757,9 +757,10 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref = self.parameters['geocent_time']
 
         threshold_frequency = 16. # 21
+        
         full_freqs = self.waveform_generator.frequency_array
-
-        mask = (full_freqs >= self.waveform_generator.minimum_frequency) & (full_freqs <= threshold_frequency)
+        min_freq = self.waveform_generator.waveform_arguments["minimum_frequency"]
+        mask = (full_freqs >= min_freq) & (full_freqs <= threshold_frequency)
         cut_freqs = full_freqs[mask]
 
         strain = np.zeros(len(cut_freqs), dtype=complex) 
