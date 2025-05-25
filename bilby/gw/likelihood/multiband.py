@@ -782,6 +782,15 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         
         print(f"response_plus shape: {response_plus.shape}")
 
+        # Remap response to full banded frequency grid
+        response_plus = response_plus[self.unique_to_original_frequencies]
+        response_cross = response_cross[self.unique_to_original_frequencies]
+        
+        print("Final shapes before strain calculation:")
+        print("plus:", plus.shape)
+        print("response_plus:", response_plus.shape)
+        print("strain:", strain.shape)
+
         strain += plus * response_plus
         strain += cross * response_cross
         # print("strain after antenna response: ", strain)
