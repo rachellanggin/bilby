@@ -759,7 +759,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex) 
 
         threshold_frequency = 16. # 21
-        full_freqs = interferometer.strain_data.frequency_array
+        full_freqs = self.waveform_generator.frequency_array
 
         mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
         cut_freqs = full_freqs[mask]
