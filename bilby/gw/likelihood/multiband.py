@@ -3,6 +3,7 @@ import math
 import numbers
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 from .base import GravitationalWaveTransient
 from ...core.utils import (
