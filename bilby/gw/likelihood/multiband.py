@@ -3,7 +3,6 @@ import math
 import numbers
 
 import numpy as np
-from scipy.interpolate import interp1d
 
 from .base import GravitationalWaveTransient
 from ...core.utils import (
@@ -760,47 +759,23 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         strain = np.zeros(len(self.banded_frequency_points), dtype=complex) 
 
         threshold_frequency = 16. # 21
-        full_wf_freqs = interferometer.strain_data.frequency_array
-        # Band to use (below threshold)
-        mask = (full_wf_freqs >= interferometer.strain_data.minimum_frequency) & (full_wf_freqs <= threshold_frequency)
-        cut_freqs = full_wf_freqs[mask]
+        full_freqs = interferometer.strain_data.frequency_array
 
-        plus = waveform_polarizations['plus']
-        cross = waveform_polarizations['cross']
+        mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
+        cut_freqs = full_freqs[mask]
 
-        print("Before interpolation:")
-        print(f"  plus shape: {plus.shape}")
-        print(f"  cross shape: {cross.shape}")
-        print(f"  waveform_generator.frequency_array shape: {self.waveform_generator.frequency_array.shape}")
-        print(f"  banded_frequency_points shape: {self.banded_frequency_points.shape}")
-
-        # Interpolate plus and cross to match banded_frequency_points
-        interp_plus = interp1d(full_wf_freqs, plus, kind='linear', bounds_error=False, fill_value=0.)
-        interp_cross = interp1d(full_wf_freqs, cross, kind='linear', bounds_error=False, fill_value=0.)
-
-        plus = interp_plus(self.banded_frequency_points)
-        cross = interp_cross(self.banded_frequency_points)
+        plus = waveform_polarizations['plus'][mask]
+        cross = waveform_polarizations['cross'][mask]
 
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
-
-        print(f"  cut_freqs shape (antenna input): {cut_freqs.shape}")
-        print(f"  response_plus shape: {response_plus.shape}")
-
-        # Interpolate response to banded_frequency_points
-        interp_resp_p = interp1d(cut_freqs, response_plus, kind='linear', bounds_error=False, fill_value=0.)
-        interp_resp_c = interp1d(cut_freqs, response_cross, kind='linear', bounds_error=False, fill_value=0.)
-
-        response_plus = interp_resp_p(self.banded_frequency_points)
-        response_cross = interp_resp_c(self.banded_frequency_points)
-
-        print("After interpolation:")
-        print(f"  Interpolated plus shape: {plus.shape}")
-        print(f"  Interpolated cross shape: {cross.shape}")
-        print(f"  Interpolated response_plus shape: {response_plus.shape}")
-        print(f"  Interpolated response_cross shape: {response_cross.shape}")
+        
+        # Debug shapes
+        print(f"cut_freqs shape: {cut_freqs.shape}")
+        print(f"plus shape after mask: {plus.shape}")
+        print(f"response_plus shape: {response_plus.shape}")
 
         strain += plus * response_plus
         strain += cross * response_cross
