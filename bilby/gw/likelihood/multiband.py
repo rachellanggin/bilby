@@ -761,20 +761,23 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         threshold_frequency = 16. # 21
         full_freqs = self.waveform_generator.frequency_array
 
-        mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
+        mask = (full_freqs >= self.waveform_generator.minimum_frequency) & (full_freqs <= threshold_frequency)
         cut_freqs = full_freqs[mask]
+        
+        print(f"full_freqs.shape: {full_freqs.shape}")
+        print(f"waveform_polarizations['plus'].shape: {waveform_polarizations['plus'].shape}")
+        print(f"cut_freqs shape: {cut_freqs.shape}")
 
         plus = waveform_polarizations['plus'][mask]
         cross = waveform_polarizations['cross'][mask]
+
+        print(f"plus shape after mask: {plus.shape}")
 
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
         
-        # Debug shapes
-        print(f"cut_freqs shape: {cut_freqs.shape}")
-        print(f"plus shape after mask: {plus.shape}")
         print(f"response_plus shape: {response_plus.shape}")
 
         strain += plus * response_plus
