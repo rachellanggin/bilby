@@ -771,7 +771,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # cross = cross[self.unique_to_original_frequencies]
         print("Length of plus:", len(plus))
         print("Length of unique_to_original_frequencies:", len(self.unique_to_original_frequencies))
-        print("Shape of waveform frequency array:", waveform_generator.frequency_array.shape)
+        print("Shape of waveform frequency array:", interferometer.strain_data.frequency_array.shape)
         print("Shape of banded_frequency_points:", self.banded_frequency_points.shape)
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
