@@ -761,31 +761,31 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         threshold_frequency = 16. # 21
         full_freqs = interferometer.strain_data.frequency_array
 
-        mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
-        cut_freqs = full_freqs[mask]
+        # mask = (full_freqs >= interferometer.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
+        # cut_freqs = full_freqs[mask]
         
-        print(f"full_freqs.shape: {full_freqs.shape}")
-        print(f"waveform_polarizations['plus'].shape: {waveform_polarizations['plus'].shape}")
-        print(f"cut_freqs shape: {cut_freqs.shape}")
+        # print(f"full_freqs.shape: {full_freqs.shape}")
+        # print(f"waveform_polarizations['plus'].shape: {waveform_polarizations['plus'].shape}")
+        # print(f"cut_freqs shape: {cut_freqs.shape}")
 
         plus = waveform_polarizations['plus']
         cross = waveform_polarizations['cross']
         plus = plus[self.unique_to_original_frequencies]
         cross = cross[self.unique_to_original_frequencies]
 
-        print(f"plus shape after mask: {plus.shape}")
+        print(f"plus shape after unique freqs: {plus.shape}")
 
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
-            cut_freqs)
+            full_freqs)
         
         print(f"response_plus shape: {response_plus.shape}")
 
         # Remap response to full banded frequency grid
         response_plus = response_plus[self.unique_to_original_frequencies]
         response_cross = response_cross[self.unique_to_original_frequencies]
-        
+
         print("Final shapes before strain calculation:")
         print("plus:", plus.shape)
         print("response_plus:", response_plus.shape)
