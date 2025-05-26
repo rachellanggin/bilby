@@ -796,9 +796,9 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             cut_freqs, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
         strain *= np.exp(-1j * 2. * np.pi * cut_freqs * ifo_time)
         strain *= calib_factor
-        # print("strain after: ", strain)
-        d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name]))
-        # print("d_inner_h: ", d_inner_h)
+        print("strain after: ", len(strain))
+        d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name][mask]))
+        print("d_inner_h: ", len(d_inner_h))
         if self.linear_interpolation:
             optimal_snr_squared = np.vdot(
                 np.real(strain * np.conjugate(strain)),
@@ -807,7 +807,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             # print('optimal_snr_squared after linear_interpolatio:', optimal_snr_squared)
         else:
             optimal_snr_squared = 0.
-            for b in range(self.number_of_bands):
+            for b in range(self.number_of_bands[mask]):
                 Ks, Ke = self.Ks_Ke[b]
                 start_idx, end_idx = self.start_end_idxs[b]
                 Mb = self.Mbs[b]
