@@ -60,7 +60,6 @@ class WaveformGenerator(object):
 
         """
         self.frequency_domain_source_model = frequency_domain_source_model
-        self.frequency_array = frequency_array
         self.time_domain_source_model = time_domain_source_model
         self.source_parameter_keys = self.__parameters_from_source_model()
         if parameter_conversion is None:
@@ -77,6 +76,9 @@ class WaveformGenerator(object):
                                                             sampling_frequency=sampling_frequency,
                                                             start_time=start_time,
                                                             frequency_array = frequency_array)
+        if frequency_array is not None:
+            # tell the source model exactly which freqs to evaluate
+            self.waveform_arguments['frequencies'] = frequency_array
         if isinstance(parameters, dict):
             self.parameters = parameters
         self._cache = dict(parameters=None, waveform=None, model=None)
