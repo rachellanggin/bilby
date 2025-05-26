@@ -764,7 +764,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # mask = (frequencies >= min_freq) & (frequencies <= max_freq)
         # cut_freqs = frequencies[mask]
 
-        strain = np.zeros(len(cut_freqs), dtype=complex)
+        strain = np.zeros(len(frequencies), dtype=complex)
 
         plus = waveform_polarizations['plus']
         cross = waveform_polarizations['cross']
