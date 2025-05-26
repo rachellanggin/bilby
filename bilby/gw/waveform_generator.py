@@ -74,10 +74,10 @@ class WaveformGenerator(object):
         start_time = self.waveform_arguments.get("start_time", start_time)
         self._times_and_frequencies = CoupledTimeAndFrequencySeries(duration=duration,
                                                             sampling_frequency=sampling_frequency,
-                                                            start_time=start_time,
-                                                            frequency_array = frequency_array)
+                                                            start_time=start_time)
         if frequency_array is not None:
-            # tell the source model exactly which freqs to evaluate
+            # Now that the object exists, override its frequency array if provided
+            self._times_and_frequencies.frequency_array = frequency_array
             self.waveform_arguments['frequencies'] = frequency_array
         if isinstance(parameters, dict):
             self.parameters = parameters
