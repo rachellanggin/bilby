@@ -17,7 +17,7 @@ class WaveformGenerator(object):
     duration = PropertyAccessor('_times_and_frequencies', 'duration')
     sampling_frequency = PropertyAccessor('_times_and_frequencies', 'sampling_frequency')
     start_time = PropertyAccessor('_times_and_frequencies', 'start_time')
-    frequency_array = interferometer.strain_data.frequency_array
+    frequency_array = PropertyAccessor('_times_and_frequencies', 'frequency_array')
     time_array = PropertyAccessor('_times_and_frequencies', 'time_array')
 
     def __init__(self, duration=None, sampling_frequency=None, start_time=0, 
@@ -60,6 +60,7 @@ class WaveformGenerator(object):
 
         """
         self.frequency_domain_source_model = frequency_domain_source_model
+        self.frequency_array = frequency_array
         self.time_domain_source_model = time_domain_source_model
         self.source_parameter_keys = self.__parameters_from_source_model()
         if parameter_conversion is None:
@@ -74,7 +75,8 @@ class WaveformGenerator(object):
         start_time = self.waveform_arguments.get("start_time", start_time)
         self._times_and_frequencies = CoupledTimeAndFrequencySeries(duration=duration,
                                                             sampling_frequency=sampling_frequency,
-                                                            start_time=start_time)
+                                                            start_time=start_time,
+                                                            frequency_array = frequency_array)
         if isinstance(parameters, dict):
             self.parameters = parameters
         self._cache = dict(parameters=None, waveform=None, model=None)

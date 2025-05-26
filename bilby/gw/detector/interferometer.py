@@ -292,7 +292,7 @@ class Interferometer(object):
         # return np.einsum('ij,ij->', self.geometry.detector_tensor, polarization_tensor)
         return antenna_response_plus, antenna_response_cross
 
-    def get_detector_response(self, waveform_polarizations, parameters, raise_error=True):
+    def get_detector_response(self, waveform_polarizations, frequencies, parameters, raise_error=True):
         """ Get the detector response for a particular waveform
 
         Parameters
