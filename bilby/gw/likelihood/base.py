@@ -404,6 +404,11 @@ class GravitationalWaveTransient(Likelihood):
         return self._noise_log_likelihood_value
 
     def log_likelihood_ratio(self):
+        # ─── ensure detector data segment matches waveform start ───
+        desired_start = self.waveform_generator.start_time
+        for ifo in self.interferometers:
+            ifo.strain_data.start_time = desired_start
+
         waveform_polarizations = \
             self.waveform_generator.frequency_domain_strain(self.parameters)
         if waveform_polarizations is None:
