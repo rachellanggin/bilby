@@ -765,7 +765,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         frequencies = self.banded_frequency_points
         min_freq = 7.0
         max_freq = 16.0
-        print(interferometer.strain_data.minimum_chirp_mass)
+        print(interferometer.strain_data.minimum_frequency)
         mask = (frequencies >= min_freq) & (frequencies <= threshold_frequency)
         cut_freqs = frequencies[mask]
 
