@@ -777,7 +777,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         logger.info(
             f"banded freq len: {len(frequencies)},  mask sum: {mask.sum()}, "
-            f"resp_plus len: {len(response_plus)}, plus[mask] len: {(plus_cut)}"
+            f"resp_plus len: {len(response_plus)}, plus_cut: {(plus_cut)}"
         )
         
         strain += plus_cut * response_plus
@@ -797,12 +797,17 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         strain *= np.exp(-1j * 2. * np.pi * cut_freqs * ifo_time)
         strain *= calib_factor
         print("strain after: ", len(strain))
-        d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name][mask]))
+        idxs = np.nonzero(mask)[0]
+        lin_coeffs_full = self.linear_coeffs[interferometer.name]
+        lin_coeffs_cut  = lin_coeffs_full[idxs]
+        d_inner_h = np.conj(np.dot(strain, lin_coeffs_cut))
         print("d_inner_h: ", len(d_inner_h))
+        quad_coeffs_full = self.quadratic_coeffs[interferometer.name]
+        quad_coeffs_cut = quad_coeffs_full[idxs]
         if self.linear_interpolation:
             optimal_snr_squared = np.vdot(
                 np.real(strain * np.conjugate(strain)),
-                self.quadratic_coeffs[interferometer.name]
+                quad_coeffs_cut
             )
             # print('optimal_snr_squared after linear_interpolatio:', optimal_snr_squared)
         else:
