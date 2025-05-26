@@ -756,44 +756,26 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         else:
             time_ref = self.parameters['geocent_time']
 
-        #threshold_frequency = 16. # 21
+        frequencies = self.banded_frequency_points
+        
+        # min_freq = interferometer.strain_data.minimum_frequency
+        # max_freq = interferometer.strain_data.maximum_frequency
+        
+        # mask = (frequencies >= min_freq) & (frequencies <= max_freq)
+        # cut_freqs = frequencies[mask]
+
+        strain = np.zeros(len(cut_freqs), dtype=complex)
 
         plus = waveform_polarizations['plus']
         cross = waveform_polarizations['cross']
 
-        # Create a matching frequency array
-        frequencies = self.banded_frequency_points
-        min_freq = interferometer.strain_data.minimum_frequency
-        max_freq = 16.0
-        print(interferometer.strain_data.maximum_frequency)
-        mask = (frequencies >= min_freq) & (frequencies <= max_freq)
-        cut_freqs = frequencies[mask]
-
-        plus = plus[mask]
-        cross = cross[mask]
-
-        strain = np.zeros(len(cut_freqs), dtype=complex) 
-        print('strain: ', len(strain))
-
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
-            cut_freqs)
+            frequencies)
         
-        print(f"response_plus shape: {response_plus.shape}")
-
-        # Remap response to full banded frequency grid
-        # response_plus = response_plus[cut_freqs]
-        # response_cross = response_cross[cut_freqs]
-
-        print("Final shapes before strain calculation:")
-        print("plus:", plus.shape)
-        print("response_plus:", response_plus.shape)
-        print("strain:", strain.shape)
-
         strain += plus * response_plus
         strain += cross * response_cross
-        print("strain after antenna response: ", strain)
         
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
