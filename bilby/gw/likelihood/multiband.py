@@ -757,7 +757,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref = self.parameters['geocent_time']
 
         frequencies = self.waveform_generator.waveform_arguments['frequencies']
-        print('self.unique_freqs from wavefrom args: ', len(frequencies))
+        #print('self.unique_freqs from wavefrom args: ', len(frequencies))
         
         min_freq = interferometer.strain_data.minimum_frequency
         max_freq = interferometer.strain_data.maximum_frequency
@@ -775,10 +775,10 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
 
-        logger.info(
-            f"banded freq len: {len(frequencies)},  mask sum: {mask.sum()}, "
-            f"resp_plus len: {len(response_plus)}, plus_cut: {(plus_cut)}"
-        )
+        # logger.info(
+        #     f"banded freq len: {len(frequencies)},  mask sum: {mask.sum()}, "
+        #     f"resp_plus len: {len(response_plus)}, plus_cut: {(plus_cut)}"
+        # )
         
         strain += plus_cut * response_plus
         strain += cross_cut * response_cross
@@ -796,12 +796,12 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             cut_freqs, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
         strain *= np.exp(-1j * 2. * np.pi * cut_freqs * ifo_time)
         strain *= calib_factor
-        print("strain after: ", len(strain))
+        #print("strain after: ", len(strain))
         idxs = np.nonzero(mask)[0]
         lin_coeffs_full = self.linear_coeffs[interferometer.name]
         lin_coeffs_cut  = lin_coeffs_full[idxs]
         d_inner_h = np.conj(np.dot(strain, lin_coeffs_cut))
-        print("d_inner_h: ", len(d_inner_h))
+        #print("d_inner_h: ", len(d_inner_h))
         quad_coeffs_full = self.quadratic_coeffs[interferometer.name]
         quad_coeffs_cut = quad_coeffs_full[idxs]
         if self.linear_interpolation:
