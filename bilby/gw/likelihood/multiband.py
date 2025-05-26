@@ -812,7 +812,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             # print('optimal_snr_squared after linear_interpolatio:', optimal_snr_squared)
         else:
             optimal_snr_squared = 0.
-            for b in range(self.number_of_bands[mask]):
+            for b in range(self.number_of_bands):
                 Ks, Ke = self.Ks_Ke[b]
                 start_idx, end_idx = self.start_end_idxs[b]
                 Mb = self.Mbs[b]
