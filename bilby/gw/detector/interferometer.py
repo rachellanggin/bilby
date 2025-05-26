@@ -489,7 +489,7 @@ class Interferometer(object):
                 'Injecting signal outside segment, start_time={}, merger time={}.'
                 .format(self.strain_data.start_time, parameters['geocent_time']))
 
-        signal_ifo = self.get_detector_response(injection_polarizations, parameters)
+        signal_ifo = self.get_detector_response(injection_polarizations, frequencies=self.strain_data.frequency_array, parameters=parameters)
         self.strain_data.frequency_domain_strain += signal_ifo
 
         self.meta_data['optimal_SNR'] = (
