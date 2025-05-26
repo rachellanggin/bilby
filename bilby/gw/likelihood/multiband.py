@@ -797,11 +797,10 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         strain *= np.exp(-1j * 2. * np.pi * cut_freqs * ifo_time)
         strain *= calib_factor
         print("strain after: ", len(strain))
-        idxs = np.nonzero(mask)[0]
         lin_coeffs_full = self.linear_coeffs[interferometer.name]
         lin_coeffs_cut  = lin_coeffs_full[idxs]
         d_inner_h = np.conj(np.dot(strain, lin_coeffs_cut))
-        #print("d_inner_h: ", d_inner_h)
+        print("d_inner_h: ", len(d_inner_h))
         quad_coeffs_full = self.quadratic_coeffs[interferometer.name]
         quad_coeffs_cut = quad_coeffs_full[idxs]
         if self.linear_interpolation:
