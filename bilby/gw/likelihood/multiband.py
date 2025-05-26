@@ -757,7 +757,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref = self.parameters['geocent_time']
 
         frequencies = self.unique_frequencies
-        print('self.unique_freqs from wavefrom args': len(frequencies))
+        print('self.unique_freqs from wavefrom args: ', len(frequencies))
         
         min_freq = interferometer.strain_data.minimum_frequency
         max_freq = interferometer.strain_data.maximum_frequency
