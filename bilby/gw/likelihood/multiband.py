@@ -773,9 +773,14 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             self.parameters['ra'], self.parameters['dec'],
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
+
+        logger.info(
+            f"banded freq len: {len(frequencies)},  mask sum: {mask.sum()}, "
+            f"resp_plus len: {len(response_plus)}, plus[mask] len: {len(plus[mask])}"
+        )
         
-        strain += plus[mask] * response_plus[mask]
-        strain += cross * response_cross
+        strain += plus[mask] * response_plus
+        strain += cross[mask] * response_cross
         
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
@@ -787,8 +792,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # print('ifo_time: ', ifo_time)
 
         calib_factor = interferometer.calibration_model.get_calibration_factor(
-            self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
-        strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
+            cut_freqs, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
+        strain *= np.exp(-1j * 2. * np.pi * cut_freqs * ifo_time)
         strain *= calib_factor
         # print("strain after: ", strain)
         d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name]))
