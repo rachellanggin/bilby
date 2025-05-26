@@ -777,7 +777,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         logger.info(
             f"banded freq len: {len(frequencies)},  mask sum: {mask.sum()}, "
-            f"resp_plus len: {len(response_plus)}, plus[mask] len: {len(plus[mask])}"
+            f"resp_plus len: {len(response_plus)}, plus[mask] len: {(plus_cut)}"
         )
         
         strain += plus_cut * response_plus
