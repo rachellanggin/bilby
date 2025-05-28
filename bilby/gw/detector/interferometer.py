@@ -14,7 +14,7 @@ from .calibration import Recalibrate
 from .geometry import InterferometerGeometry
 from .strain_data import InterferometerStrainData
 from ..conversion import generate_all_bbh_parameters, generate_all_bns_parameters, component_masses_to_chirp_mass
-from ..waveform_generator import waveform_arguments
+from ..waveform_generator import WaveformGenerator
 
 class Interferometer(object):
     """Class for the Interferometer """
@@ -46,7 +46,7 @@ class Interferometer(object):
     time_domain_strain = PropertyAccessor('strain_data', 'time_domain_strain')
 
     # If waveform_arguments specifies start_time, override it
-    start_time = waveform_generator.waveform_arguments.get("start_time", start_time)
+    start_time = WaveformGenerator.waveform_arguments.get("start_time", start_time)
     print(start_time)
 
     def __init__(self, name, power_spectral_density, minimum_frequency, maximum_frequency, length, latitude, longitude,
