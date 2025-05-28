@@ -324,17 +324,18 @@ class Interferometer(object):
         # Define early-warning frequency band to use
         cut_freqs = full_freqs[mask]
 
+        chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
+
         # Get detector responses
         det_response_plus, det_response_cross = self.antenna_response(
             parameters['ra'], parameters['dec'], parameters['geocent_time'], parameters['psi'],
-            parameters['chirp_mass'], cut_freqs)
+            chirp_mass, cut_freqs)
 
         # Truncate waveform_polarizations since the det response is along cut_freqs
         wp_plus = waveform_polarizations['plus'][mask]
         wp_cross = waveform_polarizations['cross'][mask]
 
         # I get rid of fill_arrays below since we have to use the cut_freqs in multiband approach
-        
         signal_cut = wp_plus * det_response_plus + wp_cross * det_response_cross
 
         # Insert into full masked array

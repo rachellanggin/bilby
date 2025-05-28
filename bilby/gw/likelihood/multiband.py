@@ -773,10 +773,12 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         plus_cut = waveform_polarizations['plus'][mask]
         cross_cut = waveform_polarizations['cross'][mask]
 
+        chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
+
         # Get the antenna response using our cut_freqs
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
-            time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
+            time_ref, self.parameters['psi'], chirp_mass,
             cut_freqs)
 
         # logger.info(
