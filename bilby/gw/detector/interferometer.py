@@ -36,7 +36,7 @@ class Interferometer(object):
 
     duration = PropertyAccessor('strain_data', 'duration')
     sampling_frequency = PropertyAccessor('strain_data', 'sampling_frequency')
-    start_time = PropertyAccessor('strain_data', 'start_time')
+    start_time = PropertyAccessor('_times_and_frequencies', 'start_time')
     frequency_array = PropertyAccessor('strain_data', 'frequency_array')
     time_array = PropertyAccessor('strain_data', 'time_array')
     minimum_frequency = PropertyAccessor('strain_data', 'minimum_frequency')
