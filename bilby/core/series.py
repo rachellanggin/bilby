@@ -17,7 +17,7 @@ class CoupledTimeAndFrequencySeries(object):
         """
         self._duration = duration
         self._sampling_frequency = sampling_frequency
-        self.start_time = start_time
+        self.start_time = start_time 
         self._frequency_array_updated = False
         self._time_array_updated = False
         self._frequency_array = None

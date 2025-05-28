@@ -244,12 +244,6 @@ class Interferometer(object):
             The GPS start-time of the data
 
         """
-        deltaT = gwutils.calculate_time_to_merger(
-            frequency=self.minimum_frequency,
-            mass_1=self.parameters["mass_1"],
-            mass_2=self.parameters["mass_2"],
-        )
-        start_time = self.parameters['geocent_time'] - deltaT
         self.strain_data.set_from_zero_noise(
             sampling_frequency=sampling_frequency, duration=duration,
             start_time=start_time)
