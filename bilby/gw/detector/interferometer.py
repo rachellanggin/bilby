@@ -44,9 +44,8 @@ class Interferometer(object):
     frequency_mask = PropertyAccessor('strain_data', 'frequency_mask')
     frequency_domain_strain = PropertyAccessor('strain_data', 'frequency_domain_strain')
     time_domain_strain = PropertyAccessor('strain_data', 'time_domain_strain')
-
-    # If waveform_arguments specifies start_time, override it
-    start_time = WaveformGenerator.waveform_arguments.get("start_time", start_time)
+    
+    start_time = interferometer.strain_data.start_time
     print(start_time)
 
     def __init__(self, name, power_spectral_density, minimum_frequency, maximum_frequency, length, latitude, longitude,
