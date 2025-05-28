@@ -92,10 +92,6 @@ class Interferometer(object):
             maximum_frequency=maximum_frequency)
         self.meta_data = dict(name=name)
 
-    @property
-    def start_time(self):
-        return self.strain_data.start_time
-
     def __eq__(self, other):
         if self.name == other.name and \
                 self.geometry == other.geometry and \
