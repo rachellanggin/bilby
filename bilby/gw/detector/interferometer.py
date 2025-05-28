@@ -498,7 +498,7 @@ class Interferometer(object):
                 .format(self.strain_data.start_time, parameters['geocent_time']))
         # Inject the signal with the same frequencies the waveform polarizations are computed at.
         signal_ifo = self.get_detector_response(
-            injection_polarizations, frequencies=self.waveform_generator.waveform_arguments['frequencies'], 
+            injection_polarizations, frequencies=waveform_generator.waveform_arguments['frequencies'], 
             parameters=parameters)
         self.strain_data.frequency_domain_strain += signal_ifo
 
