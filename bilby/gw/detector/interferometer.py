@@ -36,7 +36,7 @@ class Interferometer(object):
 
     duration = PropertyAccessor('strain_data', 'duration')
     sampling_frequency = PropertyAccessor('strain_data', 'sampling_frequency')
-    start_time = PropertyAccessor('_times_and_frequencies', 'start_time')
+    start_time = PropertyAccessor('strain_data', 'start_time')
     frequency_array = PropertyAccessor('strain_data', 'frequency_array')
     time_array = PropertyAccessor('strain_data', 'time_array')
     minimum_frequency = PropertyAccessor('strain_data', 'minimum_frequency')
@@ -91,6 +91,10 @@ class Interferometer(object):
             minimum_frequency=minimum_frequency,
             maximum_frequency=maximum_frequency)
         self.meta_data = dict(name=name)
+
+    @property
+    def start_time(self):
+        return self.strain_data.start_time
 
     def __eq__(self, other):
         if self.name == other.name and \
@@ -311,7 +315,7 @@ class Interferometer(object):
         =======
         array_like: A 3x3 array representation of the detector response (signal observed in the interferometer)
         """
-        threshold_frequency= 16. #21.
+        threshold_frequency= 21.
         full_freqs = frequencies # Take the input frequencies, specified in inject_signal below
 
         # Band to use (below threshold)
@@ -320,13 +324,10 @@ class Interferometer(object):
         # Define early-warning frequency band to use
         cut_freqs = full_freqs[mask]
 
-        # Set the chirp mass 
-        chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
-
         # Get detector responses
         det_response_plus, det_response_cross = self.antenna_response(
             parameters['ra'], parameters['dec'], parameters['geocent_time'], parameters['psi'],
-            chirp_mass, cut_freqs)
+            parameters['chirp_mass'], cut_freqs)
 
         # Truncate waveform_polarizations since the det response is along cut_freqs
         wp_plus = waveform_polarizations['plus'][mask]
@@ -337,7 +338,7 @@ class Interferometer(object):
         signal_cut = wp_plus * det_response_plus + wp_cross * det_response_cross
 
         # Insert into full masked array
-        signal_ifo *= np.ones(full_freqs, dtype=complex) # set up values for full array
+        signal_ifo = np.ones(full_freqs, dtype=complex) # set up values for full array
         signal_ifo[mask] = signal_cut # apply the freq idx mask, then set equal to signal_cut
 
         # Apply time delay

@@ -759,12 +759,11 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # This is self consistent with frequencies waveform polarizations are generated from
         frequencies = interferometer.strain_data.frequency_array
         #print('self.unique_freqs from wavefrom args: ', len(frequencies))
-        
-        # The min/max from the interferometer is passed correctly, so we can create our cut_freq mask from it
-        min_freq = interferometer.strain_data.minimum_frequency 
-        max_freq = interferometer.strain_data.maximum_frequency
-        
-        mask = (frequencies >= min_freq) & (frequencies <= max_freq)
+
+        threshold_frequency= 21.
+
+        # Band to use (below threshold)
+        mask = (frequencies >= self.strain_data.minimum_frequency) & (frequencies <= threshold_frequency)
         cut_freqs = frequencies[mask]
         # This is the same procedure as done in interferometer.py get_det_response
 
