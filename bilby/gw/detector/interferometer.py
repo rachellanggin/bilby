@@ -14,7 +14,6 @@ from .calibration import Recalibrate
 from .geometry import InterferometerGeometry
 from .strain_data import InterferometerStrainData
 from ..conversion import generate_all_bbh_parameters, generate_all_bns_parameters, component_masses_to_chirp_mass
-from ..waveform_generator import WaveformGenerator
 
 class Interferometer(object):
     """Class for the Interferometer """
@@ -334,7 +333,7 @@ class Interferometer(object):
         signal_cut = wp_plus * det_response_plus + wp_cross * det_response_cross
 
         # Insert into full masked array
-        signal_ifo = np.zeros(full_freqs, dtype=complex) # set up values for full array
+        signal_ifo = np.zeros_like(full_freqs, dtype=complex) # set up values for full array
         signal_ifo[mask] = signal_cut # apply the freq idx mask, then set equal to signal_cut
 
         # Apply time delay
