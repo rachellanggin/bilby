@@ -311,15 +311,19 @@ class Interferometer(object):
         =======
         array_like: A 3x3 array representation of the detector response (signal observed in the interferometer)
         """
-        threshold_frequency=16.
-        full_freqs = self.strain_data.frequency_array
+        threshold_frequency= 16. #21.
+        full_freqs = frequencies # Take the input frequencies, specified in inject_signal below
 
         # Band to use (below threshold)
         mask = (full_freqs >= self.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
+
+        # Define early-warning frequency band to use
         cut_freqs = full_freqs[mask]
 
+        # Set the chirp mass 
         chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
 
+        # Get detector responses
         det_response_plus, det_response_cross = self.antenna_response(
             parameters['ra'], parameters['dec'], parameters['geocent_time'], parameters['psi'],
             chirp_mass, cut_freqs)
@@ -328,11 +332,11 @@ class Interferometer(object):
         wp_plus = waveform_polarizations['plus'][mask]
         wp_cross = waveform_polarizations['cross'][mask]
 
-        signal_cut = wp_plus * det_response_plus + wp_cross * det_response_cross
+        signal_ifo = wp_plus * det_response_plus + wp_cross * det_response_cross
 
-        # Insert into full array
-        signal_ifo = np.zeros_like(full_freqs, dtype=complex)
-        signal_ifo[mask] = signal_cut
+        # Insert into full masked array
+        signal_ifo *= self.strain_data.frequency_mask
+        # signal_ifo[mask] = signal_cut
 
         # Apply time delay
         time_shift = self.time_delay_from_geocenter(
@@ -341,11 +345,13 @@ class Interferometer(object):
         dt_geocent = parameters['geocent_time'] - self.strain_data.start_time
         dt = dt_geocent + time_shift
 
-        signal_ifo *= np.exp(-1j * 2 * np.pi * dt * full_freqs)
+        signal_ifo[self.strain_data.frequency_mask] = signal_ifo[self.strain_data.frequency_mask] * np.exp(
+            -1j * 2 * np.pi * dt * self.strain_data.frequency_array[self.strain_data.frequency_mask])
 
         # Apply calibration
-        signal_ifo *= self.calibration_model.get_calibration_factor(
-            full_freqs, prefix=f'recalib_{self.name}_', **parameters)
+        signal_ifo[self.strain_data.frequency_mask] *= self.calibration_model.get_calibration_factor(
+            self.strain_data.frequency_array[self.strain_data.frequency_mask],
+            prefix=f'recalib_{self.name}_', **parameters)
 
         return signal_ifo
 
@@ -488,8 +494,10 @@ class Interferometer(object):
             logger.warning(
                 'Injecting signal outside segment, start_time={}, merger time={}.'
                 .format(self.strain_data.start_time, parameters['geocent_time']))
-
-        signal_ifo = self.get_detector_response(injection_polarizations, frequencies=self.strain_data.frequency_array, parameters=parameters)
+        # Inject the signal with the same frequencies the waveform polarizations are computed at.
+        signal_ifo = self.get_detector_response(
+            injection_polarizations, frequencies=self.waveform_generator.waveform_arguments['frequencies'], 
+            parameters=parameters)
         self.strain_data.frequency_domain_strain += signal_ifo
 
         self.meta_data['optimal_SNR'] = (
