@@ -757,7 +757,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref = self.parameters['geocent_time']
         
         # This is self consistent with frequencies waveform polarizations are generated from
-        frequencies = self.waveform_generator.waveform_arguments['frequencies']
+        frequencies = interferometer.strain_data.frequency_array
         #print('self.unique_freqs from wavefrom args: ', len(frequencies))
         
         # The min/max from the interferometer is passed correctly, so we can create our cut_freq mask from it

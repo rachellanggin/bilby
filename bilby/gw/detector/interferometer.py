@@ -333,12 +333,12 @@ class Interferometer(object):
         wp_cross = waveform_polarizations['cross'][mask]
 
         # I get rid of fill_arrays below since we have to use the cut_freqs in multiband approach
-
-        signal_ifo = wp_plus * det_response_plus + wp_cross * det_response_cross
+        
+        signal_cut = wp_plus * det_response_plus + wp_cross * det_response_cross
 
         # Insert into full masked array
-        signal_ifo *= self.strain_data.frequency_mask
-        # signal_ifo[mask] = signal_cut
+        signal_ifo *= np.ones(full_freqs, dtype=complex) # set up values for full array
+        signal_ifo[mask] = signal_cut # apply the freq idx mask, then set equal to signal_cut
 
         # Apply time delay
         time_shift = self.time_delay_from_geocenter(
