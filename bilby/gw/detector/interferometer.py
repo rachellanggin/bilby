@@ -14,6 +14,7 @@ from .calibration import Recalibrate
 from .geometry import InterferometerGeometry
 from .strain_data import InterferometerStrainData
 from ..conversion import generate_all_bbh_parameters, generate_all_bns_parameters, component_masses_to_chirp_mass
+from ..waveform_generator import waveform_generator
 
 
 class Interferometer(object):
@@ -44,6 +45,10 @@ class Interferometer(object):
     frequency_mask = PropertyAccessor('strain_data', 'frequency_mask')
     frequency_domain_strain = PropertyAccessor('strain_data', 'frequency_domain_strain')
     time_domain_strain = PropertyAccessor('strain_data', 'time_domain_strain')
+
+    # If waveform_arguments specifies start_time, override it
+    start_time = waveform_generator.waveform_arguments.get("start_time", start_time)
+    print(start_time)
 
     def __init__(self, name, power_spectral_density, minimum_frequency, maximum_frequency, length, latitude, longitude,
                  elevation, xarm_azimuth, yarm_azimuth, xarm_tilt=0., yarm_tilt=0., calibration_model=Recalibrate()):
@@ -334,7 +339,7 @@ class Interferometer(object):
         signal_cut = wp_plus * det_response_plus + wp_cross * det_response_cross
 
         # Insert into full masked array
-        signal_ifo = np.ones(full_freqs, dtype=complex) # set up values for full array
+        signal_ifo = np.zeros(full_freqs, dtype=complex) # set up values for full array
         signal_ifo[mask] = signal_cut # apply the freq idx mask, then set equal to signal_cut
 
         # Apply time delay
