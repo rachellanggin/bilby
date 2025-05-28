@@ -328,9 +328,11 @@ class Interferometer(object):
             parameters['ra'], parameters['dec'], parameters['geocent_time'], parameters['psi'],
             chirp_mass, cut_freqs)
 
-        # Truncate waveform_polarizations
+        # Truncate waveform_polarizations since the det response is along cut_freqs
         wp_plus = waveform_polarizations['plus'][mask]
         wp_cross = waveform_polarizations['cross'][mask]
+
+        # I get rid of fill_arrays below since we have to use the cut_freqs in multiband approach
 
         signal_ifo = wp_plus * det_response_plus + wp_cross * det_response_cross
 
