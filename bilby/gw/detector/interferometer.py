@@ -44,9 +44,6 @@ class Interferometer(object):
     frequency_mask = PropertyAccessor('strain_data', 'frequency_mask')
     frequency_domain_strain = PropertyAccessor('strain_data', 'frequency_domain_strain')
     time_domain_strain = PropertyAccessor('strain_data', 'time_domain_strain')
-    
-    start_time = interferometer.strain_data.start_time
-    print(start_time)
 
     def __init__(self, name, power_spectral_density, minimum_frequency, maximum_frequency, length, latitude, longitude,
                  elevation, xarm_azimuth, yarm_azimuth, xarm_tilt=0., yarm_tilt=0., calibration_model=Recalibrate()):
