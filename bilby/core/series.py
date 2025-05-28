@@ -126,11 +126,5 @@ class CoupledTimeAndFrequencySeries(object):
 
     @start_time.setter
     def start_time(self, start_time):
-        deltaT = gwutils.calculate_time_to_merger(
-            frequency=self.minimum_frequency,
-            mass_1=self.parameters["mass_1"],
-            mass_2=self.parameters["mass_2"],
-        )
-        start_time = self.parameters['geocent_time'] - deltaT
         self._start_time = start_time
         self._time_array_updated = False
