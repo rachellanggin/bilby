@@ -14,8 +14,7 @@ from .calibration import Recalibrate
 from .geometry import InterferometerGeometry
 from .strain_data import InterferometerStrainData
 from ..conversion import generate_all_bbh_parameters, generate_all_bns_parameters, component_masses_to_chirp_mass
-from ..gw.waveform_generator import waveform_arguments
-
+from ..waveform_generator import waveform_arguments
 
 class Interferometer(object):
     """Class for the Interferometer """
