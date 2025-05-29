@@ -773,8 +773,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         strain = np.zeros(len(cut_freqs), dtype=complex) 
         print("waveform polarizations:", len(waveform_polarizations['plus']))
         # Apply cut_freq mask to the waveform polarizations 
-        plus_cut = waveform_polarizations['plus'][mask]
-        cross_cut = waveform_polarizations['cross'][mask]
+        plus_cut = waveform_polarizations['plus']# [mask]
+        cross_cut = waveform_polarizations['cross']# [mask]
 
         chirp_mass = component_masses_to_chirp_mass(parameters['mass_1'], parameters['mass_2'])
 
@@ -790,8 +790,9 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # )
         
         # Mult. the waveform polarization with the antenna response to get the strain
-        strain += plus_cut * response_plus
-        strain += cross_cut * response_cross
+        pol_idx = np.nonzero(plus_cut)[0]
+        strain += plus_cut * response_plus[pol_idx]
+        strain += cross_cut * response_cross[pol_idx]
         
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
