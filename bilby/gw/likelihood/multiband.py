@@ -757,7 +757,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref = self.parameters['geocent_time']
         
         # This is self consistent with frequencies waveform polarizations are generated from
-        frequencies = interferometer.strain_data.frequency_array
+        frequencies = self.banded_frequency_points
+        print("frequencies:", len(frequencies))
         #print('self.unique_freqs from wavefrom args: ', len(frequencies))
 
         threshold_frequency= 21.
@@ -766,9 +767,11 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         mask = (frequencies >= interferometer.strain_data.minimum_frequency) & (frequencies <= threshold_frequency)
         cut_freqs = frequencies[mask]
         # This is the same procedure as done in interferometer.py get_det_response
-
+        print("mask length:", len(mask))
+        print("cut freqs:", len(cut_freqs))
+        
         strain = np.zeros(len(cut_freqs), dtype=complex) 
-
+        print("waveform polarizations:", len(waveform_polarizations['plus']))
         # Apply cut_freq mask to the waveform polarizations 
         plus_cut = waveform_polarizations['plus'][mask]
         cross_cut = waveform_polarizations['cross'][mask]
