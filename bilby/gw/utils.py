@@ -558,9 +558,10 @@ def get_gracedb(gracedb, outdir, duration, calibration, detectors, query_types=N
     cache_files: list
         List of cache filenames, one per interferometer.
     """
+    import lalsimulation
     candidate = gracedb_to_json(gracedb, outdir=outdir)
     trigger_time = candidate['gpstime']
-    gps_start_time = trigger_time - duration
+    gps_start_time = trigger_time - duration 
     cache_files = []
     if query_types is None:
         query_types = [None] * len(detectors)

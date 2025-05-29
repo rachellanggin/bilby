@@ -8,7 +8,7 @@ from bilby_cython.geometry import (
 )
 
 from ...core import utils
-from ...core.utils import docstring, logger, PropertyAccessor, safe_file_dump
+from ...core.utils import docstring, logger, PropertyAccessor, safe_file_dump, calculate_time_to_merger
 from .. import utils as gwutils
 from .calibration import Recalibrate
 from .geometry import InterferometerGeometry
@@ -230,7 +230,7 @@ class Interferometer(object):
         self.strain_data.set_from_csv(filename)
 
     def set_strain_data_from_zero_noise(
-            self, sampling_frequency, duration, start_time=0):
+            self, sampling_frequency, duration, start_time=0, parameters):
         """ Set the `Interferometer.strain_data` to zero noise
 
         Parameters
@@ -243,9 +243,12 @@ class Interferometer(object):
             The GPS start-time of the data
 
         """
+        t_7 = calculate_time_to_merger(
+            frequency=self.minimum_frequency, mass_1=parameters['mass_1'], parameters['mass_2'], chi=0, safety=1.1
+            )
         self.strain_data.set_from_zero_noise(
             sampling_frequency=sampling_frequency, duration=duration,
-            start_time=start_time)
+            start_time=start_time-t_7)
 
     def antenna_response(self, ra, dec, time, psi, chirp_mass, frequency):
         """
