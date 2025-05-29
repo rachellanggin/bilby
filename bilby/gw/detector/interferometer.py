@@ -8,7 +8,7 @@ from bilby_cython.geometry import (
 )
 
 from ...core import utils
-from ...core.utils import docstring, logger, PropertyAccessor, safe_file_dump, calculate_time_to_merger
+from ...core.utils import docstring, logger, PropertyAccessor, safe_file_dump
 from .. import utils as gwutils
 from .calibration import Recalibrate
 from .geometry import InterferometerGeometry
