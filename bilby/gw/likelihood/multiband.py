@@ -763,7 +763,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         threshold_frequency= 21.
 
         # Band to use (below threshold)
-        mask = (frequencies >= self.strain_data.minimum_frequency) & (frequencies <= threshold_frequency)
+        mask = (frequencies >= interferometer.strain_data.minimum_frequency) & (frequencies <= threshold_frequency)
         cut_freqs = frequencies[mask]
         # This is the same procedure as done in interferometer.py get_det_response
 
