@@ -100,7 +100,7 @@ class InterferometerList(list):
             )
 
     def set_strain_data_from_zero_noise(
-        self, sampling_frequency, duration, start_time=0
+        self, parameters, sampling_frequency, duration, start_time=0
     ):
         """Set the `Interferometer.strain_data` to zero in each detector
 
@@ -118,10 +118,14 @@ class InterferometerList(list):
 
         """
         for interferometer in self:
+            t_7 = gwutils.calculate_time_to_merger(
+                frequency=interferometer.minimum_frequency, mass_1=parameters['mass_1'], 
+                mass_2=parameters['mass_2'], chi=0, safety=1.1
+                )
             interferometer.set_strain_data_from_zero_noise(
                 sampling_frequency=sampling_frequency,
                 duration=duration,
-                start_time=start_time,
+                start_time=start_time - t_7,
             )
 
     def inject_signal(
