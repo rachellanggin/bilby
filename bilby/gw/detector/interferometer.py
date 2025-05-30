@@ -230,7 +230,7 @@ class Interferometer(object):
         self.strain_data.set_from_csv(filename)
 
     def set_strain_data_from_zero_noise(
-            self, sampling_frequency, duration, start_time=0):
+            self, sampling_frequency, duration, start_time=0, parameters):
         """ Set the `Interferometer.strain_data` to zero noise
 
         Parameters
@@ -244,8 +244,8 @@ class Interferometer(object):
 
         """
         t_7 = gwutils.calculate_time_to_merger(
-            frequency=self.minimum_frequency, mass_1=self.parameters['mass_1'], 
-            mass_2=self.parameters['mass_2'], chi=0, safety=1.1
+            frequency=self.minimum_frequency, mass_1=parameters['mass_1'], 
+            mass_2=parameters['mass_2'], chi=0, safety=1.1
             )
         print(t_7)
         print('start_time - t_7:', start_time - t_7)
