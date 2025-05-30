@@ -13,6 +13,8 @@ from ...core.utils import (
 )
 from ..prior import CBCPriorDict
 from ..utils import ln_i0
+from ..conversion import component_masses_to_chirp_mass
+
 
 
 class MBGravitationalWaveTransient(GravitationalWaveTransient):
