@@ -13,8 +13,6 @@ from ...core.utils import (
 )
 from ..prior import CBCPriorDict
 from ..utils import ln_i0
-from ..conversion import component_masses_to_chirp_mass
-
 
 
 class MBGravitationalWaveTransient(GravitationalWaveTransient):
@@ -778,12 +776,10 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         plus_cut = waveform_polarizations['plus']# [mask]
         cross_cut = waveform_polarizations['cross']# [mask]
 
-        chirp_mass = component_masses_to_chirp_mass(self.parameters['mass_1'], self.parameters['mass_2'])
-
         # Get the antenna response using our cut_freqs
         response_plus, response_cross = interferometer.antenna_response(
             self.parameters['ra'], self.parameters['dec'],
-            time_ref, self.parameters['psi'], chirp_mass,
+            time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
 
         # logger.info(
