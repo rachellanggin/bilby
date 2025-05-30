@@ -788,8 +788,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # )
         
         # Mult. the waveform polarization with the antenna response to get the strain
-        strain += plus_cut * response_plus
-        strain += cross_cut * response_cross
+        strain += plus_cut * response_plus[self.unique_to_original_frequencies]
+        strain += cross_cut * response_cross[self.unique_to_original_frequencies]
         
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
@@ -802,24 +802,26 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # print('ifo_time: ', ifo_time)
 
         # Call the strain on our cut_freqs (could maybe try self.banded_frequency_points)
-        strain *= np.exp(-1j * 2. * np.pi * cut_freqs * ifo_time)
+        strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
 
         strain = interferometer.calibration_model.get_calibration_factor(
-            cut_freqs, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
+            self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
 
         # We have to also apply our frequency mask to the linear coeffs so that we can mult. together the cut strain with them
-        idxs = np.nonzero(mask)[0]
-        lin_coeffs_full = self.linear_coeffs[interferometer.name]
-        lin_coeffs_cut  = lin_coeffs_full[idxs]
-        d_inner_h = np.conj(np.dot(strain, lin_coeffs_cut))
+        # idxs = np.nonzero(mask)[0]
+        # lin_coeffs_full = self.linear_coeffs[interferometer.name]
+        # lin_coeffs_cut  = lin_coeffs_full[idxs]
+        # d_inner_h = np.conj(np.dot(strain, lin_coeffs_cut))
+
+        d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name]))
         #print("d_inner_h: ", len(d_inner_h))
         # We always linear_interpolate so that we use the first part of our if statement:
         if self.linear_interpolation:
-            quad_coeffs_full = self.quadratic_coeffs[interferometer.name]
-            quad_coeffs_cut = quad_coeffs_full[idxs]
+            # quad_coeffs_full = self.quadratic_coeffs[interferometer.name]
+            # quad_coeffs_cut = quad_coeffs_full[idxs]
             optimal_snr_squared = np.vdot(
                 np.real(strain * np.conjugate(strain)),
-                quad_coeffs_cut
+                self.quadratic_coeffs[interferometer.name]
             )
             # print('optimal_snr_squared after linear_interpolatio:', optimal_snr_squared)
         else:
