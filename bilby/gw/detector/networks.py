@@ -7,6 +7,7 @@ from ...core import utils
 from ...core.utils import logger, safe_file_dump
 from .interferometer import Interferometer
 from .psd import PowerSpectralDensity
+from .. import utils as gwutils
 
 
 class InterferometerList(list):
@@ -118,7 +119,7 @@ class InterferometerList(list):
 
         """
         for interferometer in self:
-            t_7 = utils.calculate_time_to_merger(
+            t_7 = gwutils.calculate_time_to_merger(
                 frequency=interferometer.minimum_frequency, mass_1=parameters['mass_1'], 
                 mass_2=parameters['mass_2'], chi=0, safety=1.1
                 )
