@@ -243,15 +243,9 @@ class Interferometer(object):
             The GPS start-time of the data
 
         """
-        t_7 = gwutils.calculate_time_to_merger(
-            frequency=self.minimum_frequency, mass_1=parameters['mass_1'], 
-            mass_2=parameters['mass_2'], chi=0, safety=1.1
-            )
-        print(t_7)
-        print('start_time - t_7:', start_time - t_7)
         self.strain_data.set_from_zero_noise(
             sampling_frequency=sampling_frequency, duration=duration,
-            start_time=start_time - t_7)
+            start_time=parameters['start_time'])
 
     def antenna_response(self, ra, dec, time, psi, chirp_mass, frequency):
         """

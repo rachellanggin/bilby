@@ -119,15 +119,11 @@ class InterferometerList(list):
 
         """
         for interferometer in self:
-            t_7 = gwutils.calculate_time_to_merger(
-                frequency=interferometer.minimum_frequency, mass_1=parameters['mass_1'], 
-                mass_2=parameters['mass_2'], chi=0, safety=1.1
-                )
             interferometer.set_strain_data_from_zero_noise(
                 parameters=parameters,
                 sampling_frequency=sampling_frequency,
                 duration=duration,
-                start_time=start_time - t_7,
+                start_time=parameters['start_time'],
             )
 
     def inject_signal(
