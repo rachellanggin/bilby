@@ -244,7 +244,8 @@ class Interferometer(object):
 
         """
         t_7 = gwutils.calculate_time_to_merger(
-            frequency=self.minimum_frequency, mass_1=self.parameters['mass_1'], self.parameters['mass_2'], chi=0, safety=1.1
+            frequency=self.minimum_frequency, mass_1=self.parameters['mass_1'], 
+            mass_2=self.parameters['mass_2'], chi=0, safety=1.1
             )
         print(t_7)
         print('start_time - t_7:', start_time - t_7)
