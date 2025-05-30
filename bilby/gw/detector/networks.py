@@ -118,7 +118,7 @@ class InterferometerList(list):
 
         """
         for interferometer in self:
-            t_7 = gwutils.calculate_time_to_merger(
+            t_7 = utils.calculate_time_to_merger(
                 frequency=interferometer.minimum_frequency, mass_1=parameters['mass_1'], 
                 mass_2=parameters['mass_2'], chi=0, safety=1.1
                 )
