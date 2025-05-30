@@ -123,6 +123,7 @@ class InterferometerList(list):
                 mass_2=parameters['mass_2'], chi=0, safety=1.1
                 )
             interferometer.set_strain_data_from_zero_noise(
+                parameters=parameters,
                 sampling_frequency=sampling_frequency,
                 duration=duration,
                 start_time=start_time - t_7,
