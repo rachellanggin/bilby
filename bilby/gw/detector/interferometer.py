@@ -230,7 +230,7 @@ class Interferometer(object):
         self.strain_data.set_from_csv(filename)
 
     def set_strain_data_from_zero_noise(
-            self, sampling_frequency, duration, start_time=0, parameters):
+            self, parameters, sampling_frequency, duration, start_time=0):
         """ Set the `Interferometer.strain_data` to zero noise
 
         Parameters
