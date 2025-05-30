@@ -45,8 +45,7 @@ class Interferometer(object):
     time_domain_strain = PropertyAccessor('strain_data', 'time_domain_strain')
 
     def __init__(self, name, power_spectral_density, minimum_frequency, maximum_frequency, length, latitude, longitude,
-                 elevation, xarm_azimuth, yarm_azimuth, xarm_tilt=0., yarm_tilt=0., calibration_model=Recalibrate(),
-                 start_time):
+                 elevation, xarm_azimuth, yarm_azimuth, xarm_tilt=0., yarm_tilt=0., calibration_model=Recalibrate()):
         """
         Instantiate an Interferometer object.
 
@@ -90,8 +89,6 @@ class Interferometer(object):
         self.strain_data = InterferometerStrainData(
             minimum_frequency=minimum_frequency,
             maximum_frequency=maximum_frequency)
-        self.start_time = InterferometerStrainData(
-            start_time = start_time)
         self.meta_data = dict(name=name)
 
     def __eq__(self, other):
