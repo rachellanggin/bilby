@@ -788,9 +788,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # )
         
         # Mult. the waveform polarization with the antenna response to get the strain
-        pol_idx = np.nonzero(plus_cut)[0]
-        strain += plus_cut * response_plus[pol_idx]
-        strain += cross_cut * response_cross[pol_idx]
+        strain += plus_cut * response_plus
+        strain += cross_cut * response_cross
         
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
