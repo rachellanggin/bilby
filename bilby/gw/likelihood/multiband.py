@@ -764,7 +764,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         threshold_frequency= 21.
 
         # Band to use (below threshold)
-        mask = (frequencies >= interferometer.strain_data.minimum_frequency) & (frequencies <= threshold_frequency)
+        mask = (frequencies >= interferometer.strain_data.minimum_frequency) & (frequencies <= interferometer.strain_data.maximum_frequency)
         cut_freqs = frequencies[mask]
         # This is the same procedure as done in interferometer.py get_det_response
         print("mask length:", len(mask))
@@ -773,8 +773,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         strain = np.zeros(len(cut_freqs), dtype=complex) 
         print("waveform polarizations:", len(waveform_polarizations['plus']))
         # Apply cut_freq mask to the waveform polarizations 
-        plus_cut = waveform_polarizations['plus']# [mask]
-        cross_cut = waveform_polarizations['cross']# [mask]
+        plus_cut = waveform_polarizations['plus'][mask]
+        cross_cut = waveform_polarizations['cross'][mask]
 
         # Get the antenna response using our cut_freqs
         response_plus, response_cross = interferometer.antenna_response(
@@ -795,6 +795,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             self.parameters['ra'], self.parameters['dec'],
             time_ref)
         # print('dt: ', dt)
+        # This will be off by ~ 109-112 secs due to ifo.start_time being off
         dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
         # print('dt_geocent: ', dt_geocent)
         ifo_time = dt_geocent + dt
