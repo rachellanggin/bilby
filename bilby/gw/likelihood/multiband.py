@@ -795,7 +795,6 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             self.parameters['ra'], self.parameters['dec'],
             time_ref)
         # print('dt: ', dt)
-        # This will be off by ~ 109-112 secs due to ifo.start_time being off
         dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
         print(interferometer.strain_data.start_time)
         # print('dt_geocent: ', dt_geocent)
@@ -805,7 +804,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # Call the strain on our cut_freqs (could maybe try self.banded_frequency_points)
         strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
         print('strain:', strain)
-        strain = interferometer.calibration_model.get_calibration_factor(
+        strain *= interferometer.calibration_model.get_calibration_factor(
             self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
         print('strain:', strain)
         # We have to also apply our frequency mask to the linear coeffs so that we can mult. together the cut strain with them
