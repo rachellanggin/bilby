@@ -758,7 +758,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         
         # This is self consistent with frequencies waveform polarizations are generated from
         frequencies = self.banded_frequency_points
-        print("frequencies:", len(frequencies))
+        #print("frequencies:", len(frequencies))
         #print('self.unique_freqs from wavefrom args: ', len(frequencies))
 
         threshold_frequency= 21.
@@ -767,11 +767,11 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         mask = (frequencies >= interferometer.strain_data.minimum_frequency) & (frequencies <= interferometer.strain_data.maximum_frequency)
         cut_freqs = frequencies[mask]
         # This is the same procedure as done in interferometer.py get_det_response
-        print("mask length:", len(mask))
-        print("cut freqs:", len(cut_freqs))
+        #print("mask length:", len(mask))
+        #print("cut freqs:", len(cut_freqs))
         
         strain = np.zeros(len(cut_freqs), dtype=complex) 
-        print("waveform polarizations:", len(waveform_polarizations['plus']))
+        #print("waveform polarizations:", len(waveform_polarizations['plus']))
         # Apply [self.unique_to_original_frequencies] mask to the waveform polarizations 
         plus_cut = waveform_polarizations['plus'][self.unique_to_original_frequencies]
         cross_cut = waveform_polarizations['cross'][self.unique_to_original_frequencies]
@@ -796,17 +796,17 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref)
         # print('dt: ', dt)
         dt_geocent = self.parameters['geocent_time'] - interferometer.strain_data.start_time
-        print(interferometer.strain_data.start_time)
+        #print(interferometer.strain_data.start_time)
         # print('dt_geocent: ', dt_geocent)
         ifo_time = dt_geocent + dt
         # print('ifo_time: ', ifo_time)
 
         # Call the strain on our cut_freqs (could maybe try self.banded_frequency_points)
         strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
-        print('strain:', strain)
+        #print('strain:', strain)
         strain *= interferometer.calibration_model.get_calibration_factor(
             self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
-        print('strain:', strain)
+        #print('strain:', strain)
         # We have to also apply our frequency mask to the linear coeffs so that we can mult. together the cut strain with them
         # idxs = np.nonzero(mask)[0]
         # lin_coeffs_full = self.linear_coeffs[interferometer.name]
