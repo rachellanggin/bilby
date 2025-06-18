@@ -3,7 +3,7 @@
 # https://dcc.ligo.org/LIGO-P1600143/public
 name = 'CE'
 power_spectral_density = PowerSpectralDensity(psd_file='CE_psd.txt')
-minimum_frequency = 7
+minimum_frequency = 4
 maximum_frequency = 2048
 length = 40
 latitude = 46 + 27. / 60 + 18.528 / 3600

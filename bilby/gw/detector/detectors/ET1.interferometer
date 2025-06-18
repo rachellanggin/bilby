@@ -4,7 +4,7 @@
 name = 'ET1'
 power_spectral_density = PowerSpectralDensity(psd_file='ET_D_psd.txt')
 length = 10
-minimum_frequency = 7
+minimum_frequency = 4
 maximum_frequency = 2048
 latitude = 43.631423649
 longitude = 10.504493624

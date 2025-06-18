@@ -540,8 +540,15 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             fddata[:len(ifo.frequency_domain_strain)][ifo.frequency_mask[:len(fddata)]] += \
                 ifo.frequency_domain_strain[ifo.frequency_mask] / ifo.power_spectral_density_array[ifo.frequency_mask]
             # print('len fddata (linear coeffs): ', len(fddata))
+            print(f"Number of bands: {self.number_of_bands}")
+            print(f"Band durations: {self.durations}")
+            print(f"Nbs: {self.Nbs}")
+            print(f"Ks_Ke: {self.Ks_Ke}")
             for b in range(self.number_of_bands):
                 Ks, Ke = self.Ks_Ke[b]
+                print(f"Ks = {Ks}, Ke = {Ke}, Ke - Ks + 1 = {Ke - Ks + 1}")
+                print(f"Band duration: {self.durations[b]}")
+                print(f"Expected samples (Mb): {self.Mbs[b]}")
                 windows = self._get_window_sequence(1. / self.durations[b], Ks, Ke - Ks + 1, b)
                 fddata_in_ith_band = np.copy(fddata[:int(self.Nbs[b] / 2 + 1)])
                 fddata_in_ith_band[-1] = 0.  # zeroing data at the Nyquist frequency
