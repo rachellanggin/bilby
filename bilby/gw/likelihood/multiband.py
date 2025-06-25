@@ -445,6 +445,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             fnow, dfnow = self.fb_dfb[b]
             fnext, _ = self.fb_dfb[b + 1]
             # Set FFT size: number of frequency bins
+            print(self.interferometers.duration)
             Nb = max(round_up_to_power_of_two(2. * (fnext * self.interferometers.duration + 1.)), 2**b)
             self.Nbs = np.append(self.Nbs, Nb)
             self.Mbs = np.append(self.Mbs, Nb // 2**b)
@@ -458,15 +459,6 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
                 f"freq range ~[{(fnow - dfnow):.1f}, {fnext:.1f}] Hz, "
                 f"N={Nb}, M={self.Mbs[-1]}, Ks={Ks}, Ke={Ke}, length={Ke - Ks + 1}"
             )
-            if Ke < Ks:
-                logger.warning(
-                    f"[multiband] Band {b} invalid (Ks={Ks}, Ke={Ke}). "
-                    f"Setting Ke = Ks to preserve band."
-                )
-                Ke = Ks
-            # Append corrected pair
-            self.Ks_Ke.append([Ks, Ke])
-
         self.Ks_Ke = np.array(self.Ks_Ke)
 
     def _setup_waveform_frequency_points(self):
