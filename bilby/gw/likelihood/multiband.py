@@ -454,6 +454,12 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             Ks = math.ceil((fnow - dfnow) * dnow)
             Ke = math.floor(fnext * dnow)
             # Enforce non-negative length (at least 1 frequency bin)
+            # Log band summary
+            logger.info(
+                f"[multiband] Band {b}: duration={dnow:.3f}s, "
+                f"freq range ~[{(fnow - dfnow):.1f}, {fnext:.1f}] Hz, "
+                f"N={Nb}, M={self.Mbs[-1]}, Ks={Ks}, Ke={Ke}, length={Ke - Ks + 1}"
+            )
             if Ke < Ks:
                 logger.warning(
                     f"[multiband] Band {b} invalid (Ks={Ks}, Ke={Ke}). "
@@ -462,12 +468,6 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
                 Ke = Ks
             # Append corrected pair
             self.Ks_Ke.append([Ks, Ke])
-            # Log band summary
-            logger.info(
-                f"[multiband] Band {b}: duration={dnow:.3f}s, "
-                f"freq range ~[{(fnow - dfnow):.1f}, {fnext:.1f}] Hz, "
-                f"N={Nb}, M={self.Mbs[-1]}, Ks={Ks}, Ke={Ke}, length={Ke - Ks + 1}"
-            )
 
         self.Ks_Ke = np.array(self.Ks_Ke)
 
