@@ -418,8 +418,6 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         while dnext > max(self.time_offset, self.minimum_banding_duration):
             fnow, _ = self.fb_dfb[-1]
             fnext, dfnext = self._find_starting_frequency(dnext, fnow)
-            if fnext is None: 
-                logger.warning(f"find_starting_frequency returned None at band {b} with dnext={dnext}, fnow={fnow}")
             if fnext is not None and fnext < min(self.maximum_frequency, self.maximum_banding_frequency):
                 self.durations = np.append(self.durations, dnext)
                 self.fb_dfb.append([fnext, dfnext])
