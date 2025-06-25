@@ -444,10 +444,29 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             dnow = self.durations[b]
             fnow, dfnow = self.fb_dfb[b]
             fnext, _ = self.fb_dfb[b + 1]
+            # Set FFT size: number of frequency bins
             Nb = max(round_up_to_power_of_two(2. * (fnext * self.interferometers.duration + 1.)), 2**b)
             self.Nbs = np.append(self.Nbs, Nb)
             self.Mbs = np.append(self.Mbs, Nb // 2**b)
-            self.Ks_Ke.append([math.ceil((fnow - dfnow) * dnow), math.floor(fnext * dnow)])
+            # Compute tentative start/end indices
+            Ks = math.ceil((fnow - dfnow) * dnow)
+            Ke = math.floor(fnext * dnow)
+            # Enforce non-negative length (at least 1 frequency bin)
+            if Ke < Ks:
+                logger.warning(
+                    f"[multiband] Band {b} invalid (Ks={Ks}, Ke={Ke}). "
+                    f"Setting Ke = Ks to preserve band."
+                )
+                Ke = Ks
+            # Append corrected pair
+            self.Ks_Ke.append([Ks, Ke])
+            # Log band summary
+            logger.info(
+                f"[multiband] Band {b}: duration={dnow:.3f}s, "
+                f"freq range ~[{(fnow - dfnow):.1f}, {fnext:.1f}] Hz, "
+                f"N={Nb}, M={self.Mbs[-1]}, Ks={Ks}, Ke={Ke}, length={Ke - Ks + 1}"
+            )
+
         self.Ks_Ke = np.array(self.Ks_Ke)
 
     def _setup_waveform_frequency_points(self):
@@ -539,16 +558,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             fddata = np.zeros(N // 2 + 1, dtype=complex)
             fddata[:len(ifo.frequency_domain_strain)][ifo.frequency_mask[:len(fddata)]] += \
                 ifo.frequency_domain_strain[ifo.frequency_mask] / ifo.power_spectral_density_array[ifo.frequency_mask]
-            # print('len fddata (linear coeffs): ', len(fddata))
-            print(f"Number of bands: {self.number_of_bands}")
-            print(f"Band durations: {self.durations}")
-            print(f"Nbs: {self.Nbs}")
-            print(f"Ks_Ke: {self.Ks_Ke}")
             for b in range(self.number_of_bands):
                 Ks, Ke = self.Ks_Ke[b]
-                print(f"Ks = {Ks}, Ke = {Ke}, Ke - Ks + 1 = {Ke - Ks + 1}")
-                print(f"Band duration: {self.durations[b]}")
-                print(f"Expected samples (Mb): {self.Mbs[b]}")
                 windows = self._get_window_sequence(1. / self.durations[b], Ks, Ke - Ks + 1, b)
                 fddata_in_ith_band = np.copy(fddata[:int(self.Nbs[b] / 2 + 1)])
                 fddata_in_ith_band[-1] = 0.  # zeroing data at the Nyquist frequency
@@ -780,8 +791,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         strain = np.zeros(len(cut_freqs), dtype=complex) 
         #print("waveform polarizations:", len(waveform_polarizations['plus']))
         # Apply [self.unique_to_original_frequencies] mask to the waveform polarizations 
-        plus_cut = waveform_polarizations['plus'][self.unique_to_original_frequencies]
-        cross_cut = waveform_polarizations['cross'][self.unique_to_original_frequencies]
+        plus_cut = waveform_polarizations['plus'][self.unique_to_original_frequencies][cut_freqs]
+        cross_cut = waveform_polarizations['cross'][self.unique_to_original_frequencies][cut_freqs]
 
         # Get the antenna response using our cut_freqs
         response_plus, response_cross = interferometer.antenna_response(
@@ -789,14 +800,14 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
 
-        # logger.info(
-        #     f"banded freq len: {len(frequencies)},  mask sum: {mask.sum()}, "
-        #     f"resp_plus len: {len(response_plus)}, plus_cut: {(plus_cut)}"
-        # )
+        logger.info(
+            f"banded freq len: {len(frequencies)},  cut_freqs len: {len(cut_freqs)}, "
+            f"resp_plus len: {len(response_plus)}, plus_cut: {(plus_cut)}"
+        )
         
         # Mult. the waveform polarization with the antenna response to get the strain
-        strain += plus_cut * response_plus[self.unique_to_original_frequencies]
-        strain += cross_cut * response_cross[self.unique_to_original_frequencies]
+        strain += plus_cut * response_plus # [self.unique_to_original_frequencies]
+        strain += cross_cut * response_cross # [self.unique_to_original_frequencies]
         
         dt = interferometer.time_delay_from_geocenter(
             self.parameters['ra'], self.parameters['dec'],
@@ -809,10 +820,12 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # print('ifo_time: ', ifo_time)
 
         # Call the strain on our cut_freqs (could maybe try self.banded_frequency_points)
-        strain *= np.exp(-1j * 2. * np.pi * self.banded_frequency_points * ifo_time)
+        strain *= np.exp(-1j * 2. * np.pi * cut_freqs * ifo_time)
+
         #print('strain:', strain)
         strain *= interferometer.calibration_model.get_calibration_factor(
-            self.banded_frequency_points, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
+            cut_freqs, prefix='recalib_{}_'.format(interferometer.name), **self.parameters)
+
         #print('strain:', strain)
         # We have to also apply our frequency mask to the linear coeffs so that we can mult. together the cut strain with them
         # idxs = np.nonzero(mask)[0]
@@ -821,6 +834,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # d_inner_h = np.conj(np.dot(strain, lin_coeffs_cut))
 
         d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name]))
+
         #print("d_inner_h: ", len(d_inner_h))
         # We always linear_interpolate so that we use the first part of our if statement:
         if self.linear_interpolation:
