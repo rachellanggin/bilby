@@ -520,6 +520,13 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         window_sequence: array
 
         """
+        if length <= 0:
+        logger.warning(
+            f"[multiband] Window sequence for band {b} has non-positive length ({length}), "
+            f"skipping window generation."
+        )
+        return np.zeros(0)
+
         fnow, dfnow = self.fb_dfb[b]
         fnext, dfnext = self.fb_dfb[b + 1]
 
