@@ -459,6 +459,12 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
                 f"freq range ~[{(fnow - dfnow):.1f}, {fnext:.1f}] Hz, "
                 f"N={Nb}, M={self.Mbs[-1]}, Ks={Ks}, Ke={Ke}, length={Ke - Ks + 1}"
             )
+            # Prevent negative window length
+            if Ke < Ks:
+                logger.warning(
+                    f"[multiband] Band {b} has Ke < Ks (Ke={Ke}, Ks={Ks}); setting Ke = Ks"
+                )
+                Ke = Ks
             # Append corrected pair
             self.Ks_Ke.append([Ks, Ke])
 
