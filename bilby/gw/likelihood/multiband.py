@@ -801,8 +801,8 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         strain = np.zeros(len(cut_freqs), dtype=complex) 
         #print("waveform polarizations:", len(waveform_polarizations['plus']))
         # Apply [self.unique_to_original_frequencies] mask to the waveform polarizations 
-        plus_cut = waveform_polarizations['plus'][self.unique_to_original_frequencies][cut_freqs]
-        cross_cut = waveform_polarizations['cross'][self.unique_to_original_frequencies][cut_freqs]
+        plus_cut = waveform_polarizations['plus'][self.unique_to_original_frequencies][mask]
+        cross_cut = waveform_polarizations['cross'][self.unique_to_original_frequencies][mask]
 
         # Get the antenna response using our cut_freqs
         response_plus, response_cross = interferometer.antenna_response(
