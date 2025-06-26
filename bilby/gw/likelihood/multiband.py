@@ -459,6 +459,9 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
                 f"freq range ~[{(fnow - dfnow):.1f}, {fnext:.1f}] Hz, "
                 f"N={Nb}, M={self.Mbs[-1]}, Ks={Ks}, Ke={Ke}, length={Ke - Ks + 1}"
             )
+            # Append corrected pair
+            self.Ks_Ke.append([Ks, Ke])
+
         self.Ks_Ke = np.array(self.Ks_Ke)
 
     def _setup_waveform_frequency_points(self):
