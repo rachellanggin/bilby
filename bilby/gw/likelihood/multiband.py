@@ -445,7 +445,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             fnow, dfnow = self.fb_dfb[b]
             fnext, _ = self.fb_dfb[b + 1]
             # Set FFT size: number of frequency bins
-            print(self.interferometers.duration)
+            #print(self.interferometers.duration)
             Nb = max(round_up_to_power_of_two(2. * (fnext * self.interferometers.duration + 1.)), 2**b)
             self.Nbs = np.append(self.Nbs, Nb)
             self.Mbs = np.append(self.Mbs, Nb // 2**b)
@@ -520,12 +520,12 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         window_sequence: array
 
         """
-        if length <= 0:
-            logger.warning(
-                f"[multiband] Window sequence for band {b} has non-positive length ({length}), "
-                f"skipping window generation."
-            )
-            return np.zeros(0)
+        # if length <= 0:
+        #     logger.warning(
+        #         f"[multiband] Window sequence for band {b} has non-positive length ({length}), "
+        #         f"skipping window generation."
+        #     )
+        #     return np.zeros(0)
 
         fnow, dfnow = self.fb_dfb[b]
         fnext, dfnext = self.fb_dfb[b + 1]
@@ -564,23 +564,29 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         for ifo in self.interferometers:
             logger.info("Pre-computing linear coefficients for {}".format(ifo.name))
             fddata = np.zeros(N // 2 + 1, dtype=complex)
+            # Trim all arrays to common minimum length
             n = min(
                 len(fddata),
                 len(ifo.frequency_domain_strain),
                 len(ifo.power_spectral_density_array),
-                len(ifo.frequency_mask)
+                len(ifo.frequency_array),
             )
-            mask = ifo.frequency_mask[:n]
+
+            # Use the same mask logic as in calculate_snrs
+            mask = (ifo.frequency_array[:n] >= ifo.strain_data.minimum_frequency) & (
+                ifo.frequency_array[:n] <= ifo.strain_data.maximum_frequency
+            )
             indices = np.where(mask)[0]
 
             fddata[indices] += (
                 ifo.frequency_domain_strain[:n][indices]
                 / ifo.power_spectral_density_array[:n][indices]
             )
+
             logger.debug(
-                        f"[{ifo.name}] Updating fddata with {len(indices)} valid frequency bins "
-                        f"(out of {n}); fddata shape: {fddata.shape}"
-                    )
+                f"[{ifo.name}] Updating fddata with {len(indices)} valid frequency bins "
+                f"(out of {n}); fddata shape: {fddata.shape}"
+            )
             for b in range(self.number_of_bands):
                 Ks, Ke = self.Ks_Ke[b]
                 windows = self._get_window_sequence(1. / self.durations[b], Ks, Ke - Ks + 1, b)
