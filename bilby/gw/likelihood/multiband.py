@@ -884,12 +884,12 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         #print('strain:', strain)
         # We have to also apply our frequency mask to the linear coeffs so that we can mult. together the cut strain with them
-        # idxs = np.nonzero(mask)[0]
+        idxs = np.nonzero(mask)[0]
         # lin_coeffs_full = self.linear_coeffs[interferometer.name]
         # lin_coeffs_cut  = lin_coeffs_full[idxs]
         # d_inner_h = np.conj(np.dot(strain, lin_coeffs_cut))
 
-        d_inner_h = np.conj(np.dot(strain, self.linear_coeffs[interferometer.name]))
+        d_inner_h = np.conj(np.dot(strain[idxs], self.linear_coeffs[interferometer.name]))
 
         #print("d_inner_h: ", len(d_inner_h))
         # We always linear_interpolate so that we use the first part of our if statement:
