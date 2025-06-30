@@ -886,6 +886,7 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         # We have to also apply our frequency mask to the linear coeffs so that we can mult. together the cut strain with them
         idxs = np.nonzero(mask)[0]
         # Trim both arrays to their common minimum length
+        coeffs = self.linear_coeffs[interferometer.name]
         n = min(len(strain[idxs]), len(coeffs))
         strain_cut = strain[idxs][:n]
         coeffs_cut = coeffs[:n]
