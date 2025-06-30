@@ -554,26 +554,29 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
         fnow, dfnow = self.fb_dfb[b]
         fnext, dfnext = self.fb_dfb[b + 1]
 
+        if length <= 0:
+            logger.warning(
+                f"[multiband] Band {b} has invalid window length={length} "
+                f"(fnow={fnow:.2f}, fnext={fnext:.2f}, delta_f={delta_f:.4f}) — skipping window."
+            )
+            return np.zeros(0)
+
         window_sequence = np.zeros(length)
-        increase_start = np.clip(
-            math.floor((fnow - dfnow) / delta_f) - start_idx + 1, 0, length
-        )
+
+        increase_start = np.clip(math.floor((fnow - dfnow) / delta_f) - start_idx + 1, 0, length)
         unity_start = np.clip(math.ceil(fnow / delta_f) - start_idx, 0, length)
-        decrease_start = np.clip(
-            math.floor((fnext - dfnext) / delta_f) - start_idx + 1, 0, length
-        )
+        decrease_start = np.clip(math.floor((fnext - dfnext) / delta_f) - start_idx + 1, 0, length)
         decrease_stop = np.clip(math.ceil(fnext / delta_f) - start_idx, 0, length)
 
         window_sequence[unity_start:decrease_start] = 1.
 
-        # this if statement avoids overflow caused by vanishing dfnow
-        if increase_start < unity_start:
+        if increase_start < unity_start and dfnow > 0:
             frequencies = (np.arange(increase_start, unity_start) + start_idx) * delta_f
             window_sequence[increase_start:unity_start] = (
                 1. + np.cos(np.pi * (frequencies - fnow) / dfnow)
             ) / 2.
 
-        if decrease_start < decrease_stop:
+        if decrease_start < decrease_stop and dfnext > 0:
             frequencies = (np.arange(decrease_start, decrease_stop) + start_idx) * delta_f
             window_sequence[decrease_start:decrease_stop] = (
                 1. - np.cos(np.pi * (frequencies - fnext) / dfnext)
