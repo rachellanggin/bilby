@@ -413,21 +413,45 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
 
         """
         self.durations = np.array([self.interferometers.duration])
-        self.fb_dfb = [[self.minimum_frequency, 0.]]
+        self.fb_dfb = [[self.minimum_frequency, 0.0]]
+
         dnext = self.interferometers.duration / 2
         while dnext > max(self.time_offset, self.minimum_banding_duration):
             fnow, _ = self.fb_dfb[-1]
             fnext, dfnext = self._find_starting_frequency(dnext, fnow)
-            if fnext is not None and fnext < min(self.maximum_frequency, self.maximum_banding_frequency):
-                self.durations = np.append(self.durations, dnext)
-                self.fb_dfb.append([fnext, dfnext])
-                dnext /= 2
-            else:
+
+            if fnext is None:
+                logger.warning(
+                    f"[multiband] Skipping band: could not find fnext for duration={dnext:.3f}s"
+                )
                 break
+
+            if fnext <= fnow:
+                logger.warning(
+                    f"[multiband] Skipping band: fnext={fnext:.2f} <= fnow={fnow:.2f}, duration={dnext:.3f}s"
+                )
+                break
+
+            if fnext >= min(self.maximum_frequency, self.maximum_banding_frequency):
+                logger.info(
+                    f"[multiband] Stopping at fnext={fnext:.2f} Hz; exceeds banding limit."
+                )
+                break
+
+            self.durations = np.append(self.durations, dnext)
+            self.fb_dfb.append([fnext, dfnext])
+            dnext /= 2
+
+        # Final upper cutoff frequency bin to complete the final band edge
         self.fb_dfb.append([self.maximum_frequency + self.delta_f_end, self.delta_f_end])
         self.fb_dfb = np.array(self.fb_dfb)
-        logger.info("The total frequency range is divided into {} bands with frequency intervals of {}.".format(
-            self.number_of_bands, ", ".join(["1/{} Hz".format(d) for d in self.durations])))
+
+        logger.info(
+            "The total frequency range is divided into {} bands with frequency intervals of {}.".format(
+                self.number_of_bands,
+                ", ".join(["1/{:.4f} Hz".format(d) for d in self.durations])
+            )
+        )
 
     def _setup_integers(self):
         """Set up integers needed for likelihood evaluations. This sets the following instance variables.
