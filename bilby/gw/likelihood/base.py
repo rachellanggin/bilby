@@ -714,7 +714,7 @@ class GravitationalWaveTransient(Likelihood):
         return interferometer.get_detector_response(
             waveform_polarizations=signal_polarizations, 
             frequencies=interferometer.strain_data.frequency_array,
-            parameters=interferometer.parameters, 
+            parameters=self.parameters, 
             raise_error=True)
 
     def generate_phase_sample_from_marginalized_likelihood(
