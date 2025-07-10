@@ -311,7 +311,21 @@ class Interferometer(object):
         """
         threshold_frequency= 21.
         full_freqs = frequencies # Take the input frequencies, specified in inject_signal below
+        
+        try:
+            parameters = generate_all_bbh_parameters(parameters)
+        except AttributeError:
+            logger.debug(
+                "generate_all_bbh_parameters parameters failed during check_signal_duration"
+            )
+            return
 
+        if ("mass_1" not in parameters) and ("mass_2" not in parameters):
+            if raise_error:
+                raise AttributeError("Unable to check signal duration as mass not given")
+            else:
+                return
+        
         # Band to use (below threshold)
         mask = (full_freqs >= self.strain_data.minimum_frequency) & (full_freqs <= threshold_frequency)
 

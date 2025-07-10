@@ -713,8 +713,6 @@ class GravitationalWaveTransient(Likelihood):
         interferometer: bilby.gw.detector.Interferometer
             Interferometer to compute the response with respect to.
         """
-        self.parameters.update(self.get_sky_frame_parameters())
-        self.parameters = convert_to_lal_binary_neutron_star_parameters(self.parameters.copy())
         return interferometer.get_detector_response(
             waveform_polarizations=signal_polarizations, 
             frequencies=interferometer.strain_data.frequency_array,
