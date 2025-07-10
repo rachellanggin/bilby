@@ -12,6 +12,8 @@ from ...core.prior import Interped, Prior, Uniform, DeltaFunction
 from ..detector import InterferometerList, get_empty_interferometer, calibration
 from ..prior import BBHPriorDict, Cosmological
 from ..utils import noise_weighted_inner_product, zenith_azimuth_to_ra_dec, ln_i0
+from ..conversion import convert_to_lal_binary_neutron_star_parameters
+
 
 
 class GravitationalWaveTransient(Likelihood):
