@@ -856,10 +856,10 @@ class MBGravitationalWaveTransient(GravitationalWaveTransient):
             time_ref, self.parameters['psi'], self.parameters['chirp_mass'],
             cut_freqs)
 
-        logger.info(
-            f"banded freq len: {len(frequencies)},  cut_freqs len: {len(cut_freqs)}, "
-            f"resp_plus len: {len(response_plus)}, plus_cut: {(plus_cut)}"
-        )
+        # logger.info(
+        #     f"banded freq len: {len(frequencies)},  cut_freqs len: {len(cut_freqs)}, "
+        #     f"resp_plus len: {len(response_plus)}, plus_cut: {(plus_cut)}"
+        # )
         
         # Mult. the waveform polarization with the antenna response to get the strain
         strain += plus_cut * response_plus # [self.unique_to_original_frequencies]
